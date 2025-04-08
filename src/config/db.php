@@ -1,10 +1,10 @@
 <?php
 // config/db.php
 
-$host = 'db';
+$host = 'localhost';
 $dbname = 'estoque';
-$user = 'estoque';  // Alterado: novo usuário do banco
-$pass = 'suasenha'; // Alterado: nova senha do banco
+$user = 'admin';  // Alterado: novo usuário do banco
+$pass = 'password'; // Alterado: nova senha do banco
 
 $dsn = "pgsql:host=$host;dbname=$dbname";
 try {
