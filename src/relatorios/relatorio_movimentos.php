@@ -1,6 +1,6 @@
 <?php
 // relatorios/relatorio_movimentos.php
-require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../config/db.php';
 
 // Consulta que junta movimentos com produtos e pessoas
 $sql = "SELECT m.id,
@@ -61,8 +61,6 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </tbody>
     </table>
 
-    <div style="margin-top: 20px;">
-        <a href="../../../index.php">Voltar para a Página Inicial</a>
-    </div>
+    <p><a href="../index.php">Voltar para a Página Inicial</a></p>
 </body>
 </html>

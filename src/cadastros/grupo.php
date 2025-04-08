@@ -1,6 +1,6 @@
 <?php
 // cadastros/grupo.php
-require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nome = $_POST['nome'];
@@ -34,6 +34,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="submit" value="Cadastrar">
     </form>
 
-    <p><a href="../../../index.php">Voltar para a Página Inicial</a></p>
+    <p><a href="../index.php">Voltar para a Página Inicial</a></p>
 </body>
 </html>

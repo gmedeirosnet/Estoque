@@ -1,6 +1,6 @@
 <?php
 // cadastros/produto.php
-require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../config/db.php';
 
 // Busca os grupos para popular o select
 $stmtGrupos = $pdo->query("SELECT id, nome FROM grupos ORDER BY nome");
@@ -47,6 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="submit" value="Cadastrar">
     </form>
 
-    <p><a href="../../../src/index.php">Voltar para a Página Inicial</a></p>
+    <p><a href="../index.php">Voltar para a Página Inicial</a></p>
 </body>
 </html>
