@@ -5,6 +5,19 @@ Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/spec/v2.0.0.html).
 
+## [0.3.0] - 2023-05-01
+
+### Adicionado
+- Atualização para PHP 8.2 estável
+- Adicionado arquivo de configuração php.ini customizado
+- Adicionado .dockerignore para otimizar builds
+- Documentação atualizada com requisitos PHP 8.2
+
+### Alterado
+- Docker Compose configurado para usar a imagem oficial php:8.2-apache
+- Corrigidos os comandos de inicialização do container PHP
+- Configuração de portas e ambiente para melhor compatibilidade
+
 ## [0.2.0] - 2023-04-15
 
 ### Adicionado

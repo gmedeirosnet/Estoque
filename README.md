@@ -2,7 +2,7 @@
 
 ## DESCRIÇÃO
 
-A seguir, apresento um exemplo de como desenvolver um sistema de estoque simples usando PHP e PostgreSQL. Essa solução exemplifica os seguintes módulos:
+A seguir, apresento um exemplo de como desenvolver um sistema de estoque simples usando PHP 8.2 e PostgreSQL. Essa solução exemplifica os seguintes módulos:
 
     - Cadastro de Pessoas
 
@@ -16,6 +16,11 @@ A seguir, apresento um exemplo de como desenvolver um sistema de estoque simples
 
 A ideia é estruturar o sistema em camadas, separando a configuração e a conexão com o banco, as operações CRUD para cada módulo e a geração do relatório. Essa explicação detalha tanto a modelagem relacional (com o script para criação das tabelas) quanto alguns exemplos de código PHP para manipulação dos dados.
 
+## Requisitos
+
+- PHP 8.2 ou superior
+- PostgreSQL 15
+- Docker e Docker Compose (para ambiente de desenvolvimento)
 
 ## Estrutura de Arquivos e Organização do projeto
 
@@ -33,6 +38,12 @@ estoque/
 │   └── relatorio_movimentos.php
 └── index.php
 ```
+
+## Como executar com Docker
+
+1. Certifique-se de ter o Docker e o Docker Compose instalados
+2. Execute `docker-compose up -d` na raiz do projeto
+3. Acesse http://localhost:8080 no seu navegador
 
 ## Considerações finais
 
