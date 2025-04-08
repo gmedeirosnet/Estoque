@@ -26,12 +26,14 @@ services:
     restart: always
     environment:
       POSTGRES_DB: estoque
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: admin        # Alterado: novo usuário root
+      POSTGRES_PASSWORD: password # Alterado: nova senha root
+      POSTGRES_MULTIPLE_DATABASES: estoque  # Define banco adicional
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh  # Script para criar usuário adicional
     networks:
       - estoque_network
 

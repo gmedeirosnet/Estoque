@@ -3,8 +3,8 @@
 
 $host = 'db';
 $dbname = 'estoque';
-$user = 'postgres';
-$pass = '';
+$user = 'estoque';  // Alterado: novo usuário do banco
+$pass = 'suasenha'; // Alterado: nova senha do banco
 
 $dsn = "pgsql:host=$host;dbname=$dbname";
 try {
