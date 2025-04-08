@@ -2,24 +2,24 @@ version: '3.8'
 
 services:
   php:
-    image: php:8.2-apache
+    image: ubuntu:22.04
     container_name: estoque_php
     volumes:
       - ./src:/var/www/html
     ports:
-      - "8080:80"
+      - "8080:8080"
     depends_on:
       - db
     environment:
       - PHP_INI_SCAN_DIR=/usr/local/etc/php/custom.d
     command: >
-      bash -c "apt-get update && apt-get install -y libpq-dev libzip-dev zip unzip &&
+      "apt-get update && apt-get install -y libpq-dev libzip-dev zip unzip &&
       docker-php-ext-install pdo pdo_pgsql zip &&
       a2enmod rewrite &&
       service apache2 restart &&
       sed -i 's/sua_senha_aqui/${POSTGRES_PASSWORD}/g' /var/www/html/config/db.php &&
       sed -i 's/localhost/db/g' /var/www/html/config/db.php &&
-      apache2-foreground"
+      apache2-background -k start &&"
     networks:
       - estoque_network
 

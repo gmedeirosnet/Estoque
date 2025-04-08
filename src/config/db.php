@@ -1,10 +1,10 @@
 <?php
 // config/db.php
 
-$host = 'localhost';
+$host = 'db';
 $dbname = 'estoque';
 $user = 'postgres';
-$pass = 'sua_senha_aqui';
+$pass = '';
 
 $dsn = "pgsql:host=$host;dbname=$dbname";
 try {
