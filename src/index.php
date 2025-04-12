@@ -14,6 +14,7 @@ $grupos = fetchLimit($pdo, 'grupos');
 $produtos = fetchLimit($pdo, 'produtos');
 $lugares = fetchLimit($pdo, 'lugares');
 $grupos_pessoas = fetchLimit($pdo, 'grupos_pessoas');
+$fabricantes = fetchLimit($pdo, 'fabricantes');
 
 // For movimentos we need to join with related tables
 $stmt = $pdo->query("
@@ -152,6 +153,9 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="cadastros/produto.php">Cadastro de Produtos</a>
                 </div>
                 <div class="menu-item">
+                    <a href="cadastros/fabricante.php">Cadastro de Fabricantes</a>
+                </div>
+                <div class="menu-item">
                     <a href="cadastros/lugar.php">Cadastro de Lugares</a>
                 </div>
             </div>
@@ -238,7 +242,7 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="record-card">
                     <h3>Grupos de Produtos</h3>
                     <?php if (!empty($grupos)): ?>
-                        <<table>
+                        <table>
                             <thead>
                                 <tr>
                                     <th>Nome</th>
@@ -257,7 +261,7 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php else: ?>
                         <p>Nenhum grupo de produtos cadastrado</p>
                     <?php endif; ?>
-                    <a href="#" class="see-all" onclick="alert('Funcionalidade a ser implementada')">Ver todos</a>
+                    <a href="cadastros/list_grupos.php" class="see-all">Ver todos</a>
                 </div>
 
                 <!-- Produtos -->
@@ -311,7 +315,33 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php else: ?>
                         <p>Nenhum lugar cadastrado</p>
                     <?php endif; ?>
-                    <a href="#" class="see-all" onclick="alert('Funcionalidade a ser implementada')">Ver todos</a>
+                    <a href="cadastros/list_lugares.php" class="see-all">Ver todos</a>
+                </div>
+
+                <!-- Fabricantes -->
+                <div class="record-card">
+                    <h3>Fabricantes</h3>
+                    <?php if (!empty($fabricantes)): ?>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>CNPJ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($fabricantes as $fabricante): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($fabricante['nome']) ?></td>
+                                    <td><?= htmlspecialchars($fabricante['cnpj']) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php else: ?>
+                        <p>Nenhum fabricante cadastrado</p>
+                    <?php endif; ?>
+                    <a href="cadastros/list_fabricantes.php" class="see-all">Ver todos</a>
                 </div>
 
                 <!-- Movimentos -->
