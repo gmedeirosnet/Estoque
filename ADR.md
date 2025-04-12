@@ -68,3 +68,81 @@ Desenvolvedores com conhecimento em PHP e PostgreSQL poderão rapidamente compre
 A escolha do stack tecnológico – PHP para o desenvolvimento e PostgreSQL para o gerenciamento de dados – foi fundamentada na robustez, segurança e facilidade de manutenção, atendendo aos requisitos iniciais do sistema de estoque. A estrutura modular adotada viabiliza a escalabilidade e futuras integrações, ao mesmo tempo em que mantém o desenvolvimento inicial simples e ágil.
 
 > **Revisão:** Este ADR deverá ser revisado sempre que houver alterações significativas no escopo do projeto ou no stack tecnológico adotado.
+
+---
+
+# ADR-002: Melhoria da Conectividade com PostgreSQL e Containerização
+
+**Data:** 2025-04-12
+**Status:** Aceito
+
+## Contexto
+
+Durante o processo de desenvolvimento e implantação do Sistema de Estoque, foram identificados problemas recorrentes de conectividade entre a aplicação PHP e o banco de dados PostgreSQL, principalmente no ambiente containerizado Docker. Estes problemas manifestavam-se como "PostgreSQL refusing connections", resultando em falhas na aplicação e dificuldades na configuração de novos ambientes.
+
+As principais causas desses problemas incluíam:
+
+1. Configuração incorreta da string de conexão no ambiente Docker
+2. Ausência de mecanismos para diagnóstico de problemas de conectividade
+3. Problemas de sincronização na inicialização dos serviços (PostgreSQL não completamente inicializado quando a aplicação tenta conectar)
+4. Configurações inadequadas de permissões no PostgreSQL
+
+## Decisão
+
+Implementar uma estratégia abrangente para melhorar a conectividade e a confiabilidade do ambiente de desenvolvimento containerizado:
+
+### 1. Configuração de Conexão Adaptável ao Ambiente
+
+- **Utilizar nomes de serviços Docker em vez de 'localhost'** nas configurações de conexão com banco de dados
+- **Implementar suporte a variáveis de ambiente** para permitir configuração flexível em diferentes ambientes
+- **Adicionar configuração explícita de portas** para evitar conflitos e problemas de resolução
+
+### 2. Ferramentas de Diagnóstico
+
+- **Criar página de teste de conexão** (`test_connection.php`) que mostre detalhes sobre o status da conexão e parâmetros utilizados
+- **Implementar verificação de existência das tabelas** para facilitar diagnóstico de problemas de estrutura do banco
+
+### 3. Configuração Docker Robusta
+
+- **Adicionar health checks** para o serviço PostgreSQL
+- **Configurar dependências explícitas** entre serviços
+- **Melhorar scripts de inicialização** do banco de dados com verificações mais robustas
+- **Definir redes e volumes Docker** explicitamente para melhor isolamento e persistência
+
+### 4. Documentação Detalhada
+
+- **Atualizar a documentação** com instruções claras para solução de problemas
+- **Documentar padrões** de configuração e abordagens para troubleshooting
+
+## Alternativas Consideradas
+
+### Uso de Frameworks com ORM Integrado
+Utilizar um framework como Laravel com Eloquent ORM ou Symfony com Doctrine poderia abstrair alguns dos problemas de conectividade. No entanto, isso aumentaria significativamente a complexidade do projeto e se afastaria da abordagem de PHP puro inicialmente adotada.
+
+### Configuração Manual sem Containerização
+Eliminar o uso de Docker e configurar manualmente os ambientes poderia reduzir alguns problemas específicos de containerização, mas dificultaria a portabilidade e reprodutibilidade dos ambientes de desenvolvimento.
+
+### Migração para MySQL
+MySQL poderia oferecer uma alternativa com configuração potencialmente mais simples, mas perderia os benefícios de integridade referencial e transações robustas que o PostgreSQL oferece, que são vitais para o sistema de controle de estoque.
+
+## Consequências
+
+### Positivas
+- **Ambiente de desenvolvimento mais confiável** e fácil de configurar
+- **Processo simplificado de onboarding** para novos desenvolvedores
+- **Melhor capacidade de diagnóstico** de problemas de conexão
+- **Maior robustez na operação** do sistema em ambientes Docker
+- **Padrões mais claros** para configuração de banco de dados e conectividade
+
+### Negativas
+- **Maior complexidade inicial** na configuração do ambiente Docker
+- **Necessidade de manutenção** dos scripts de diagnóstico e configuração
+- **Possível overhead** devido aos health checks e mecanismos adicionais
+
+## Conclusão
+
+As melhorias na conectividade com PostgreSQL e na configuração de containerização resolverão problemas críticos que afetavam a confiabilidade do ambiente de desenvolvimento e a experiência inicial dos desenvolvedores. Os benefícios de um ambiente de desenvolvimento mais robusto e previsível superam os custos de implementação e manutenção adicionais.
+
+Estas mudanças estão alinhadas com a arquitetura modular inicialmente adotada e preparam o terreno para futuras melhorias, como a possível adoção de frameworks de PHP mais robustos, sem comprometer a simplicidade atual do sistema.
+
+> **Revisão:** Este ADR deve ser revisado caso novas estratégias de containerização ou padrões de conectividade com banco de dados sejam adotados.
