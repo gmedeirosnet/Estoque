@@ -219,7 +219,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         .tipo-card {
             flex: 1;
-            border: 2px solid #ddd;
+            border: 2px solid #6c757d; /* Grey border */
+            background-color: #f8f9fa; /* Light grey background */
             border-radius: 5px;
             padding: 15px;
             text-align: center;
@@ -233,16 +234,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-color: #007bff;
             box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
         }
-        .tipo-card.entrada {
-            border-color: #28a745;
-        }
         .tipo-card.entrada.selected {
             background-color: #d4edda;
             border-color: #28a745;
             box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
-        }
-        .tipo-card.saida {
-            border-color: #dc3545;
         }
         .tipo-card.saida.selected {
             background-color: #f8d7da;
