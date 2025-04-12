@@ -33,31 +33,28 @@ $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $fabricantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Count products by manufacturer
-function getProductCountByManufacturer($pdo, $fabricanteId) {
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM produtos WHERE id_fabricante = :id_fabricante");
-    $stmt->execute(['id_fabricante' => $fabricanteId]);
-    return $stmt->fetchColumn();
-}
-
 // Handle delete action
 if (isset($_POST['delete']) && isset($_POST['id'])) {
     $id = (int)$_POST['id'];
 
-    // Check if the manufacturer has associated products
-    $product_count = getProductCountByManufacturer($pdo, $id);
+    try {
+        // Check if there are any products using this fabricante
+        $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM produtos WHERE id_fabricante = :id");
+        $stmt_check->execute([':id' => $id]);
+        $produtos_count = $stmt_check->fetchColumn();
 
-    if ($product_count > 0) {
-        $error = "Não é possível excluir este fabricante pois existem produtos associados a ele.";
-    } else {
-        try {
+        if ($produtos_count > 0) {
+            $error = "Não é possível excluir este fabricante pois existem produtos associados a ele.";
+        } else {
             $stmt = $pdo->prepare("DELETE FROM fabricantes WHERE id = :id");
             $stmt->execute([':id' => $id]);
+
+            // Redirect to avoid resubmission
             header("Location: list_fabricantes.php?deleted=1");
             exit;
-        } catch (PDOException $e) {
-            $error = "Erro ao excluir fabricante: " . $e->getMessage();
         }
+    } catch (PDOException $e) {
+        $error = "Não foi possível excluir este fabricante. Erro: " . $e->getMessage();
     }
 }
 ?>
@@ -219,23 +216,24 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
             <table>
                 <thead>
                     <tr>
-                        <th>CNPJ</th>
+                        <th>ID</th>
                         <th>Nome</th>
+                        <th>CNPJ</th>
                         <th>Email</th>
                         <th>Endereço</th>
-                        <th>Produtos</th>
+                        <th>Observação</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($fabricantes as $fabricante): ?>
-                        <?php $product_count = getProductCountByManufacturer($pdo, $fabricante['id']); ?>
                         <tr>
-                            <td><?= htmlspecialchars($fabricante['cnpj']) ?></td>
+                            <td><?= $fabricante['id'] ?></td>
                             <td><?= htmlspecialchars($fabricante['nome']) ?></td>
+                            <td><?= htmlspecialchars($fabricante['cnpj']) ?></td>
                             <td><?= htmlspecialchars($fabricante['email'] ?? '-') ?></td>
                             <td><?= htmlspecialchars($fabricante['endereco'] ?? '-') ?></td>
-                            <td><?= $product_count ?></td>
+                            <td><?= htmlspecialchars($fabricante['observacao'] ?? '-') ?></td>
                             <td class="actions">
                                 <a href="fabricante.php?id=<?= $fabricante['id'] ?>" class="btn btn-warning">Editar</a>
                                 <form method="post" onsubmit="return confirm('Tem certeza que deseja excluir este fabricante?');" style="display: inline;">

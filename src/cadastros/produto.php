@@ -2,14 +2,6 @@
 // cadastros/produto.php
 require_once __DIR__ . '/../config/db.php';
 
-// Busca os grupos para popular o select
-$stmtGrupos = $pdo->query("SELECT id, nome FROM grupos ORDER BY nome");
-$grupos = $stmtGrupos->fetchAll(PDO::FETCH_ASSOC);
-
-// Busca os fabricantes para popular o select
-$stmtFabricantes = $pdo->query("SELECT id, nome, cnpj FROM fabricantes ORDER BY nome");
-$fabricantes = $stmtFabricantes->fetchAll(PDO::FETCH_ASSOC);
-
 // Check if editing existing record
 $editing = false;
 $produto = null;
@@ -22,36 +14,44 @@ if (isset($_GET['id'])) {
     }
 }
 
-// Tipos de produto predefinidos
-$tipos_produto = ['Sólido', 'Líquido', 'Gasoso'];
+// Get all groups for dropdown
+$stmt_grupos = $pdo->query("SELECT id, nome FROM grupos ORDER BY nome");
+$grupos = $stmt_grupos->fetchAll(PDO::FETCH_ASSOC);
 
-// Unidades de medida comuns
-$unidades_medida = ['Kg', 'g', 'mg', 'L', 'ml', 'cm³', 'cm', 'm', 'm²', 'm³', 'unidade'];
+// Get all fabricantes for dropdown
+$stmt_fabricantes = $pdo->query("SELECT id, nome, cnpj FROM fabricantes ORDER BY nome");
+$fabricantes = $stmt_fabricantes->fetchAll(PDO::FETCH_ASSOC);
 
+// Process form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $nome = $_POST['nome'];
-    $id_grupo = isset($_POST['id_grupo']) ? trim($_POST['id_grupo']) : '';
-    $id_fabricante = isset($_POST['id_fabricante']) ? trim($_POST['id_fabricante']) : null;
-    $tipo = $_POST['tipo'] ?? '';
-    $volume = $_POST['volume'] ?? '';
-    $unidade_medida = $_POST['unidade_medida'] ?? '';
-    $preco = $_POST['preco'];
+    $nome = trim($_POST['nome']);
+    $id_grupo = !empty($_POST['id_grupo']) ? (int)$_POST['id_grupo'] : null;
+    $id_fabricante = !empty($_POST['id_fabricante']) ? (int)$_POST['id_fabricante'] : null;
+    $tipo = trim($_POST['tipo'] ?? '');
+    $volume = trim($_POST['volume'] ?? '');
+    $unidade_medida = trim($_POST['unidade_medida'] ?? '');
+    $preco = !empty($_POST['preco']) ? str_replace(',', '.', $_POST['preco']) : null;
+    $descricao = trim($_POST['descricao'] ?? '');
 
     // Validate required fields
     $errors = [];
     if (empty($nome)) {
         $errors[] = "O nome do produto é obrigatório.";
     }
-    if (empty($id_grupo)) {
-        $errors[] = "O grupo do produto é obrigatório.";
-    }
 
     // If no validation errors, proceed with database operation
     if (empty($errors)) {
         if ($editing) {
-            // Update existing product
-            $sql = "UPDATE produtos SET nome = :nome, id_grupo = :id_grupo, id_fabricante = :id_fabricante,
-                    tipo = :tipo, volume = :volume, unidade_medida = :unidade_medida, preco = :preco
+            // Update existing record
+            $sql = "UPDATE produtos SET
+                    nome = :nome,
+                    id_grupo = :id_grupo,
+                    id_fabricante = :id_fabricante,
+                    tipo = :tipo,
+                    volume = :volume,
+                    unidade_medida = :unidade_medida,
+                    preco = :preco,
+                    descricao = :descricao
                     WHERE id = :id";
             $params = [
                 'nome' => $nome,
@@ -61,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'volume' => $volume,
                 'unidade_medida' => $unidade_medida,
                 'preco' => $preco,
+                'descricao' => $descricao,
                 'id' => $_GET['id']
             ];
 
@@ -73,9 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $messageType = "error";
             }
         } else {
-            // Insert new product
-            $sql = "INSERT INTO produtos (nome, id_grupo, id_fabricante, tipo, volume, unidade_medida, preco)
-                    VALUES (:nome, :id_grupo, :id_fabricante, :tipo, :volume, :unidade_medida, :preco)";
+            // Insert new record
+            $sql = "INSERT INTO produtos (nome, id_grupo, id_fabricante, tipo, volume, unidade_medida, preco, descricao)
+                    VALUES (:nome, :id_grupo, :id_fabricante, :tipo, :volume, :unidade_medida, :preco, :descricao)";
             $params = [
                 'nome' => $nome,
                 'id_grupo' => $id_grupo,
@@ -83,13 +84,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'tipo' => $tipo,
                 'volume' => $volume,
                 'unidade_medida' => $unidade_medida,
-                'preco' => $preco
+                'preco' => $preco,
+                'descricao' => $descricao
             ];
 
             $stmt = $pdo->prepare($sql);
             if ($stmt->execute($params)) {
                 $message = "Produto cadastrado com sucesso!";
                 $messageType = "success";
+
+                // Clear form fields after successful insert
+                $nome = $id_grupo = $id_fabricante = $tipo = $volume = $unidade_medida = $preco = $descricao = '';
             } else {
                 $message = "Erro ao cadastrar produto.";
                 $messageType = "error";
@@ -138,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input, select {
+        input, textarea, select {
             width: 100%;
             padding: 8px;
             box-sizing: border-box;
@@ -147,10 +152,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         .form-row {
             display: flex;
-            gap: 10px;
+            gap: 15px;
         }
-        .form-row .form-group {
+        .form-col {
             flex: 1;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
         }
         input[type="submit"] {
             background-color: #007bff;
@@ -158,7 +167,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border: none;
             cursor: pointer;
             padding: 10px;
-            margin-top: 10px;
         }
         input[type="submit"]:hover {
             background-color: #0056b3;
@@ -187,17 +195,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             color: red;
             margin-left: 3px;
         }
+        .add-new-link {
+            display: block;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
     </style>
     <script>
-        // Form validation script
+        function formatCurrency(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value === '') {
+                input.value = '';
+                return;
+            }
+
+            value = (parseFloat(value) / 100).toFixed(2);
+            input.value = value.replace('.', ',');
+        }
+
+        // Form validation
         document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('product-form');
+            const form = document.getElementById('produto-form');
             form.addEventListener('submit', function(event) {
-                const grupoField = document.getElementById('id_grupo');
-                if (!grupoField.value) {
+                const nomeField = document.getElementById('nome');
+
+                let isValid = true;
+
+                if (!nomeField.value.trim()) {
+                    isValid = false;
+                    alert('O nome do produto é obrigatório');
+                    nomeField.focus();
+                }
+
+                if (!isValid) {
                     event.preventDefault();
-                    alert('O campo Grupo é obrigatório');
-                    grupoField.focus();
                 }
             });
         });
@@ -213,7 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
         <?php endif; ?>
 
-        <form method="post" id="product-form">
+        <form method="post" id="produto-form">
             <div class="form-group">
                 <label for="nome">Nome do Produto: <span class="required-indicator">*</span></label>
                 <input type="text" name="nome" id="nome" required
@@ -223,70 +254,66 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="form-group">
                 <label for="id_fabricante">Fabricante:</label>
                 <select name="id_fabricante" id="id_fabricante">
-                    <option value="">Selecione</option>
-                    <?php foreach ($fabricantes as $fabricante): ?>
-                    <option value="<?= $fabricante['id'] ?>" <?= ($editing && $produto['id_fabricante'] == $fabricante['id']) || (isset($id_fabricante) && $id_fabricante == $fabricante['id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($fabricante['nome']) ?> (<?= htmlspecialchars($fabricante['cnpj']) ?>)
-                    </option>
+                    <option value="">-- Selecione um Fabricante --</option>
+                    <?php foreach ($fabricantes as $fab): ?>
+                        <option value="<?= $fab['id'] ?>" <?= ($editing && $produto['id_fabricante'] == $fab['id']) ? 'selected' : (isset($id_fabricante) && $id_fabricante == $fab['id'] ? 'selected' : '') ?>>
+                            <?= htmlspecialchars($fab['nome']) ?> (<?= htmlspecialchars($fab['cnpj']) ?>)
+                        </option>
                     <?php endforeach; ?>
                 </select>
-                <small><a href="fabricante.php" target="_blank">Cadastrar novo fabricante</a></small>
+                <a href="fabricante.php" class="add-new-link" target="_blank">Adicionar novo fabricante</a>
             </div>
 
             <div class="form-group">
-                <label for="id_grupo">Grupo: <span class="required-indicator">*</span></label>
-                <select name="id_grupo" id="id_grupo" required>
-                    <option value="">Selecione</option>
+                <label for="id_grupo">Grupo:</label>
+                <select name="id_grupo" id="id_grupo">
+                    <option value="">-- Selecione um Grupo --</option>
                     <?php foreach ($grupos as $grupo): ?>
-                    <option value="<?= $grupo['id'] ?>" <?= ($editing && $produto['id_grupo'] == $grupo['id']) || (isset($id_grupo) && $id_grupo == $grupo['id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($grupo['nome']) ?>
-                    </option>
+                        <option value="<?= $grupo['id'] ?>" <?= ($editing && $produto['id_grupo'] == $grupo['id']) ? 'selected' : (isset($id_grupo) && $id_grupo == $grupo['id'] ? 'selected' : '') ?>>
+                            <?= htmlspecialchars($grupo['nome']) ?>
+                        </option>
                     <?php endforeach; ?>
                 </select>
+                <a href="grupo.php" class="add-new-link" target="__blank">Adicionar novo grupo</a>
             </div>
 
             <div class="form-group">
                 <label for="tipo">Tipo:</label>
-                <select name="tipo" id="tipo">
-                    <option value="">Selecione</option>
-                    <?php foreach ($tipos_produto as $tipo_option): ?>
-                    <option value="<?= $tipo_option ?>" <?= ($editing && ($produto['tipo'] ?? '') == $tipo_option) || (isset($tipo) && $tipo == $tipo_option) ? 'selected' : '' ?>>
-                        <?= $tipo_option ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
+                <input type="text" name="tipo" id="tipo"
+                       value="<?= $editing ? htmlspecialchars($produto['tipo'] ?? '') : (isset($tipo) ? htmlspecialchars($tipo) : '') ?>">
             </div>
 
             <div class="form-row">
-                <div class="form-group">
-                    <label for="volume">Volume/Quantidade:</label>
+                <div class="form-col">
+                    <label for="volume">Volume:</label>
                     <input type="text" name="volume" id="volume"
                            value="<?= $editing ? htmlspecialchars($produto['volume'] ?? '') : (isset($volume) ? htmlspecialchars($volume) : '') ?>">
                 </div>
-
-                <div class="form-group">
-                    <label for="unidade_medida">Unidade:</label>
-                    <select name="unidade_medida" id="unidade_medida">
-                        <option value="">Selecione</option>
-                        <?php foreach ($unidades_medida as $unidade): ?>
-                        <option value="<?= $unidade ?>" <?= ($editing && ($produto['unidade_medida'] ?? '') == $unidade) || (isset($unidade_medida) && $unidade_medida == $unidade) ? 'selected' : '' ?>>
-                            <?= $unidade ?>
-                        </option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="form-col">
+                    <label for="unidade_medida">Unidade de Medida:</label>
+                    <input type="text" name="unidade_medida" id="unidade_medida" placeholder="Ex: ml, L, kg"
+                           value="<?= $editing ? htmlspecialchars($produto['unidade_medida'] ?? '') : (isset($unidade_medida) ? htmlspecialchars($unidade_medida) : '') ?>">
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="preco">Preço:</label>
-                <input type="text" name="preco" id="preco"
-                       value="<?= $editing ? htmlspecialchars($produto['preco'] ?? '') : (isset($preco) ? htmlspecialchars($preco) : '') ?>">
+                <label for="preco">Preço (R$):</label>
+                <input type="text" name="preco" id="preco" placeholder="0,00" oninput="formatCurrency(this)"
+                       value="<?= $editing && isset($produto['preco']) ? str_replace('.', ',', $produto['preco']) : (isset($preco) ? str_replace('.', ',', $preco) : '') ?>">
+            </div>
+
+            <div class="form-group">
+                <label for="descricao">Descrição:</label>
+                <textarea name="descricao" id="descricao"><?= $editing ? htmlspecialchars($produto['descricao'] ?? '') : (isset($descricao) ? htmlspecialchars($descricao) : '') ?></textarea>
             </div>
 
             <input type="submit" value="<?= $editing ? 'Atualizar' : 'Cadastrar' ?>">
         </form>
 
-        <p><a href="../index.php">Voltar para a Página Inicial</a></p>
+        <p>
+            <a href="list_produtos.php">Ver Lista de Produtos</a> |
+            <a href="../index.php">Voltar para a Página Inicial</a>
+        </p>
     </div>
 </body>
 </html>
