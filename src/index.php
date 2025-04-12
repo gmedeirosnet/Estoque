@@ -268,6 +268,7 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <thead>
                                 <tr>
                                     <th>Nome</th>
+                                    <th>Fabricante</th>
                                     <th>Preço</th>
                                 </tr>
                             </thead>
@@ -275,6 +276,7 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <?php foreach ($produtos as $produto): ?>
                                 <tr>
                                     <td><?= htmlspecialchars($produto['nome']) ?></td>
+                                    <td><?= htmlspecialchars($produto['fabricante'] ?? '-') ?></td>
                                     <td>R$ <?= number_format($produto['preco'] ?? 0, 2, ',', '.') ?></td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -283,7 +285,7 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php else: ?>
                         <p>Nenhum produto cadastrado</p>
                     <?php endif; ?>
-                    <a href="#" class="see-all" onclick="alert('Funcionalidade a ser implementada')">Ver todos</a>
+                    <a href="cadastros/list_produtos.php" class="see-all">Ver todos</a>
                 </div>
 
                 <!-- Lugares -->

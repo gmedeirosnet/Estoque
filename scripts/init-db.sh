@@ -71,9 +71,36 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       id SERIAL PRIMARY KEY,
       nome VARCHAR(100) NOT NULL,
       id_grupo INTEGER REFERENCES grupos(id) ON DELETE SET NULL,
+      fabricante VARCHAR(100),
+      tipo VARCHAR(50),
+      volume VARCHAR(50),
+      unidade_medida VARCHAR(20),
       preco NUMERIC(10,2),
       data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Adiciona as novas colunas se a tabela já existir
+    DO \$\$
+    BEGIN
+        IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'produtos') THEN
+            IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'fabricante') THEN
+                ALTER TABLE produtos ADD COLUMN fabricante VARCHAR(100);
+            END IF;
+
+            IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'tipo') THEN
+                ALTER TABLE produtos ADD COLUMN tipo VARCHAR(50);
+            END IF;
+
+            IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'volume') THEN
+                ALTER TABLE produtos ADD COLUMN volume VARCHAR(50);
+            END IF;
+
+            IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'unidade_medida') THEN
+                ALTER TABLE produtos ADD COLUMN unidade_medida VARCHAR(20);
+            END IF;
+        END IF;
+    END
+    \$\$;
 
     -- Criação da tabela de Lugares de Estoque
     CREATE TABLE IF NOT EXISTS lugares (
