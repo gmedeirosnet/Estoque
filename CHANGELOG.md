@@ -5,6 +5,25 @@ Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-04-12
+
+### Adicionado
+- Arquivo `test_connection.php` para diagnóstico de problemas de conexão com o PostgreSQL
+- Suporte a variáveis de ambiente para configuração do banco de dados
+- Healthcheck para o serviço PostgreSQL no docker-compose.yml
+- Documentação detalhada para solução de problemas de conexão
+
+### Alterado
+- Configuração de conexão em `db.php` para usar o nome do serviço Docker ao invés de localhost
+- Melhorias no script de inicialização do banco de dados para melhor gerenciamento de permissões
+- Docker Compose atualizado com definição explícita de volumes e redes
+- Documentação atualizada com novas instruções de instalação e solução de problemas
+
+### Corrigido
+- Problema de "PostgreSQL refusing connections" ao inicializar o ambiente Docker
+- Erros de permissão no acesso ao banco de dados
+- Inconsistências na configuração dos volumes Docker
+
 ## [0.3.0] - 2023-05-01
 
 ### Adicionado

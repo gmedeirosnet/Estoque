@@ -2,19 +2,15 @@
 
 ## DESCRIÇÃO
 
-A seguir, apresento um exemplo de como desenvolver um sistema de estoque simples usando PHP 8.4 e PostgreSQL. Essa solução exemplifica os seguintes módulos:
+Sistema de estoque simples desenvolvido com PHP 8.4 e PostgreSQL 15, implementando os seguintes módulos:
 
-    - Cadastro de Pessoas
+- Cadastro de Pessoas
+- Cadastro de Produtos e Grupos de Produtos
+- Cadastro de Lugares de Estocagem
+- Movimentações (entradas e saídas) de Produtos
+- Geração de Relatórios de Movimentações e Estoque Atual
 
-    - Cadastro de Produtos e Grupos de Produtos
-
-    - Cadastro de Lugares de Estocagem
-
-    - Movimentações (entradas e saídas) de Produtos
-
-    - Geração de Relatórios de Movimentações (incluindo as pessoas que realizaram as operações)
-
-A ideia é estruturar o sistema em camadas, separando a configuração e a conexão com o banco, as operações CRUD para cada módulo e a geração do relatório. Essa explicação detalha tanto a modelagem relacional (com o script para criação das tabelas) quanto alguns exemplos de código PHP para manipulação dos dados.
+O sistema é estruturado em camadas, separando configuração, conexão com banco de dados, operações CRUD para cada módulo e geração de relatórios. Este projeto demonstra boas práticas de modelagem relacional e implementação PHP.
 
 ## Requisitos
 
@@ -25,35 +21,119 @@ A ideia é estruturar o sistema em camadas, separando a configuração e a conex
 ## Estrutura de Arquivos e Organização do projeto
 
 ```
-estoque/
-├── config/
-│   └── db.php
-├── cadastros/
-│   ├── pessoa.php
-│   ├── grupo.php
-│   ├── produto.php
-│   ├── lugar.php
-│   └── movimento.php
-├── relatorios/
-│   └── relatorio_movimentos.php
-└── index.php
+Estoque/
+├── src/                      # Código-fonte da aplicação
+│   ├── index.php             # Página inicial
+│   ├── test_connection.php   # Ferramenta para testar a conexão com o DB
+│   ├── php.ini               # Configuração personalizada do PHP
+│   ├── cadastros/            # Formulários e operações CRUD
+│   │   ├── pessoa.php
+│   │   ├── grupo.php
+│   │   ├── produto.php
+│   │   ├── lugar.php
+│   │   └── movimento.php
+│   ├── config/               # Configurações da aplicação
+│   │   ├── db.php            # Conexão com o banco de dados
+│   │   └── sql.sh            # Scripts SQL auxiliares
+│   └── relatorios/           # Geração de relatórios
+│       ├── relatorio_estoque.php
+│       └── relatorio_movimentos.php
+├── scripts/                  # Scripts de inicialização
+│   └── init-db.sh            # Script para inicialização do banco de dados
+├── terraform/                # Arquivos para infraestrutura como código
+│   ├── main.tf
+│   ├── outputs.tf
+│   └── variables.tf
+├── docker-compose.yml        # Configuração dos containers Docker
+├── README.md                 # Este arquivo
+├── CHANGELOG.md              # Histórico de alterações
+├── ADR.md                    # Registro de decisões arquiteturais
+└── SECURITY.md               # Políticas de segurança
 ```
 
-## Como executar com Docker
+## Instalação e Execução
 
-1. Certifique-se de ter o Docker e o Docker Compose instalados
-2. Execute `docker-compose up -d` na raiz do projeto
-3. Acesse http://localhost:8080 no seu navegador
+### Com Docker (Recomendado)
 
-## Considerações finais
+1. Certifique-se de ter o Docker e o Docker Compose instalados:
+   ```bash
+   docker --version
+   docker-compose --version
+   ```
+
+2. Clone o repositório:
+   ```bash
+   git clone https://github.com/seu-usuario/estoque.git
+   cd estoque
+   ```
+
+3. Inicie os contêineres:
+   ```bash
+   docker-compose up -d
+   ```
+
+4. Acesse o sistema:
+   - Aplicação Web: http://localhost:8080
+   - PgAdmin (gerenciador PostgreSQL): http://localhost:5050
+     - Email: admin@admin.com
+     - Senha: admin
+
+5. Para testar a conexão com o banco de dados:
+   - Acesse http://localhost:8080/test_connection.php
+
+### Instalação Manual
+
+1. Configure um servidor web com PHP 8.4
+2. Configure um servidor PostgreSQL 15
+3. Execute o script `scripts/init-db.sh` para criar o banco de dados
+4. Configure os parâmetros de conexão em `src/config/db.php`
+5. Acesse a aplicação pelo seu servidor web
+
+## Solução de Problemas de Conexão
+
+Se encontrar problemas de conexão com o PostgreSQL:
+
+1. Verifique se o serviço PostgreSQL está em execução:
+   ```bash
+   docker-compose ps
+   ```
+
+2. Acesse a página de teste de conexão:
+   ```
+   http://localhost:8080/test_connection.php
+   ```
+
+3. Verifique os logs do container PostgreSQL:
+   ```bash
+   docker-compose logs db
+   ```
+
+4. Certifique-se de que as credenciais de banco de dados estão corretas em `src/config/db.php`
+
+## Considerações Técnicas
 
 ### Validações e Segurança:
-Além dos exemplos apresentados, é recomendável implementar validações (tanto do lado do cliente quanto do servidor) e mecanismos de segurança, como a prevenção de SQL Injection (usando prepared statements, conforme mostrado), sanitização de dados e, se necessário, autenticação de usuários.
+- Prepared statements para prevenção de SQL Injection
+- Validação de dados nos formulários
+- Estrutura que permite implementação futura de autenticação de usuários
 
-### Modularização e Frameworks:
-Para sistemas mais robustos, considere utilizar um framework PHP (como Laravel ou Symfony) que já possui uma estrutura para organização de arquivos, rotas, modelos e controle de segurança.
+### Modularização:
+- Organização em diretórios funcionais
+- Separação clara entre lógica de dados e apresentação
+- Fácil manutenção e extensão do código
 
 ### Interface e Usabilidade:
-A interface apresentada é simples (HTML puro). É possível integrar bibliotecas de front-end ou frameworks CSS para melhorar a experiência do usuário.
+- Interface HTML simples e funcional
+- Possibilidade de integração com frameworks CSS no futuro
 
-Este exemplo cobre os principais pontos solicitados para um sistema de estoque com cadastro de pessoas, produtos (e seus grupos), lugares de estocagem, movimentações e geração de relatórios. Você pode expandir essa base para incluir funcionalidades adicionais, como edição e exclusão dos cadastros, autenticação de usuários, entre outros aprimoramentos conforme a necessidade do seu projeto.
+## Contribuição
+
+1. Faça um fork do repositório
+2. Crie um branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
+3. Faça commit das suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`)
+4. Envie para o branch (`git push origin feature/nova-funcionalidade`)
+5. Abra um Pull Request
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
