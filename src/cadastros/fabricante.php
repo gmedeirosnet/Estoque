@@ -5,68 +5,54 @@ require_once __DIR__ . '/../config/db.php';
 // Check if editing existing record
 $editing = false;
 $fabricante = null;
-
 if (isset($_GET['id'])) {
     $stmt = $pdo->prepare("SELECT * FROM fabricantes WHERE id = :id");
     $stmt->execute(['id' => $_GET['id']]);
     $fabricante = $stmt->fetch(PDO::FETCH_ASSOC);
-
     if ($fabricante) {
         $editing = true;
     }
 }
 
+// Process form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $cnpj = isset($_POST['cnpj']) ? preg_replace('/[^0-9]/', '', $_POST['cnpj']) : '';
-    $nome = $_POST['nome'];
-    $observacao = $_POST['observacao'];
-    $endereco = $_POST['endereco'];
-    $email = $_POST['email'];
+    $nome = trim($_POST['nome']);
+    $cnpj = trim($_POST['cnpj']);
+    $observacao = trim($_POST['observacao'] ?? '');
+    $endereco = trim($_POST['endereco'] ?? '');
+    $email = trim($_POST['email'] ?? '');
 
-    // Validations
+    // Validate required fields
     $errors = [];
-
-    if (empty($cnpj)) {
-        $errors[] = "O CNPJ é obrigatório.";
-    } elseif (strlen($cnpj) != 14) {
-        $errors[] = "O CNPJ deve ter 14 números.";
-    }
-
     if (empty($nome)) {
         $errors[] = "O nome do fabricante é obrigatório.";
     }
-
-    if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = "O formato do email não é válido.";
-    }
-
-    // Check if CNPJ already exists (except for editing current record)
-    if (!empty($cnpj)) {
-        $query = "SELECT COUNT(*) FROM fabricantes WHERE cnpj = :cnpj";
-        $params = ['cnpj' => $cnpj];
-
-        if ($editing) {
-            $query .= " AND id != :id";
-            $params['id'] = $_GET['id'];
+    if (empty($cnpj)) {
+        $errors[] = "O CNPJ é obrigatório.";
+    } elseif ($editing && isset($_GET['id'])) {
+        // Check if CNPJ is already used by another record
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM fabricantes WHERE cnpj = :cnpj AND id != :id");
+        $stmt->execute(['cnpj' => $cnpj, 'id' => $_GET['id']]);
+        if ($stmt->fetchColumn() > 0) {
+            $errors[] = "Este CNPJ já está em uso por outro fabricante.";
         }
-
-        $stmt = $pdo->prepare($query);
-        $stmt->execute($params);
-
+    } else {
+        // Check if CNPJ already exists
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM fabricantes WHERE cnpj = :cnpj");
+        $stmt->execute(['cnpj' => $cnpj]);
         if ($stmt->fetchColumn() > 0) {
             $errors[] = "Este CNPJ já está cadastrado.";
         }
     }
 
+    // If no validation errors, proceed with database operation
     if (empty($errors)) {
         if ($editing) {
-            $sql = "UPDATE fabricantes
-                    SET cnpj = :cnpj, nome = :nome, observacao = :observacao,
-                        endereco = :endereco, email = :email
-                    WHERE id = :id";
+            // Update existing record
+            $sql = "UPDATE fabricantes SET nome = :nome, cnpj = :cnpj, observacao = :observacao, endereco = :endereco, email = :email WHERE id = :id";
             $params = [
-                'cnpj' => $cnpj,
                 'nome' => $nome,
+                'cnpj' => $cnpj,
                 'observacao' => $observacao,
                 'endereco' => $endereco,
                 'email' => $email,
@@ -82,11 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $messageType = "error";
             }
         } else {
-            $sql = "INSERT INTO fabricantes (cnpj, nome, observacao, endereco, email)
-                    VALUES (:cnpj, :nome, :observacao, :endereco, :email)";
+            // Insert new record
+            $sql = "INSERT INTO fabricantes (nome, cnpj, observacao, endereco, email) VALUES (:nome, :cnpj, :observacao, :endereco, :email)";
             $params = [
-                'cnpj' => $cnpj,
                 'nome' => $nome,
+                'cnpj' => $cnpj,
                 'observacao' => $observacao,
                 'endereco' => $endereco,
                 'email' => $email
@@ -97,23 +83,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $message = "Fabricante cadastrado com sucesso!";
                 $messageType = "success";
 
-                // Clear form
-                $cnpj = $nome = $observacao = $endereco = $email = '';
+                // Clear form fields after successful insert
+                $nome = $cnpj = $observacao = $endereco = $email = '';
             } else {
                 $message = "Erro ao cadastrar fabricante.";
                 $messageType = "error";
             }
         }
     } else {
+        // Display validation errors
         $message = implode("<br>", $errors);
         $messageType = "error";
     }
-}
-
-// Format CNPJ for display
-function formatCNPJ($cnpj) {
-    if (strlen($cnpj) != 14) return $cnpj;
-    return preg_replace("/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/", "$1.$2.$3/$4-$5", $cnpj);
 }
 ?>
 
@@ -169,7 +150,6 @@ function formatCNPJ($cnpj) {
             border: none;
             cursor: pointer;
             padding: 10px;
-            margin-top: 10px;
         }
         input[type="submit"]:hover {
             background-color: #0056b3;
@@ -187,10 +167,6 @@ function formatCNPJ($cnpj) {
             background-color: #f8d7da;
             color: #721c24;
         }
-        .required-indicator {
-            color: red;
-            margin-left: 3px;
-        }
         a {
             color: #007bff;
             text-decoration: none;
@@ -198,25 +174,58 @@ function formatCNPJ($cnpj) {
         a:hover {
             text-decoration: underline;
         }
+        .required-indicator {
+            color: red;
+            margin-left: 3px;
+        }
     </style>
     <script>
-        // CNPJ formatting
+        // CNPJ mask function
         function formatCNPJ(input) {
             let value = input.value.replace(/\D/g, '');
-            if (value.length > 14) value = value.slice(0, 14);
+            if (value.length > 14) {
+                value = value.substring(0, 14);
+            }
 
             if (value.length > 12) {
-                value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/, "$1.$2.$3/$4-$5");
+                value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/, '$1.$2.$3/$4-$5');
             } else if (value.length > 8) {
-                value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4}).*/, "$1.$2.$3/$4");
+                value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d*).*/, '$1.$2.$3/$4');
             } else if (value.length > 5) {
-                value = value.replace(/^(\d{2})(\d{3})(\d{0,3}).*/, "$1.$2.$3");
+                value = value.replace(/^(\d{2})(\d{3})(\d*).*/, '$1.$2.$3');
             } else if (value.length > 2) {
-                value = value.replace(/^(\d{2})(\d{0,3}).*/, "$1.$2");
+                value = value.replace(/^(\d{2})(\d*).*/, '$1.$2');
             }
 
             input.value = value;
         }
+
+        // Form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('fabricante-form');
+            form.addEventListener('submit', function(event) {
+                const nomeField = document.getElementById('nome');
+                const cnpjField = document.getElementById('cnpj');
+
+                let isValid = true;
+
+                if (!nomeField.value.trim()) {
+                    isValid = false;
+                    alert('O nome do fabricante é obrigatório');
+                    nomeField.focus();
+                }
+
+                if (!cnpjField.value.trim()) {
+                    isValid = false;
+                    alert('O CNPJ é obrigatório');
+                    cnpjField.focus();
+                }
+
+                if (!isValid) {
+                    event.preventDefault();
+                }
+            });
+        });
     </script>
 </head>
 <body>
@@ -229,42 +238,42 @@ function formatCNPJ($cnpj) {
             </div>
         <?php endif; ?>
 
-        <form method="post">
-            <div class="form-group">
-                <label for="cnpj">CNPJ: <span class="required-indicator">*</span></label>
-                <input type="text" name="cnpj" id="cnpj"
-                       value="<?= isset($cnpj) ? formatCNPJ($cnpj) : ($editing ? formatCNPJ($fabricante['cnpj']) : '') ?>"
-                       onkeyup="formatCNPJ(this)" maxlength="18" required>
-            </div>
-
+        <form method="post" id="fabricante-form">
             <div class="form-group">
                 <label for="nome">Nome do Fabricante: <span class="required-indicator">*</span></label>
                 <input type="text" name="nome" id="nome" required
-                       value="<?= isset($nome) ? htmlspecialchars($nome) : ($editing ? htmlspecialchars($fabricante['nome']) : '') ?>">
+                       value="<?= $editing ? htmlspecialchars($fabricante['nome']) : (isset($nome) ? htmlspecialchars($nome) : '') ?>">
             </div>
 
             <div class="form-group">
-                <label for="endereco">Endereço:</label>
-                <input type="text" name="endereco" id="endereco"
-                       value="<?= isset($endereco) ? htmlspecialchars($endereco) : ($editing ? htmlspecialchars($fabricante['endereco'] ?? '') : '') ?>">
+                <label for="cnpj">CNPJ: <span class="required-indicator">*</span></label>
+                <input type="text" name="cnpj" id="cnpj" required oninput="formatCNPJ(this)"
+                       value="<?= $editing ? htmlspecialchars($fabricante['cnpj']) : (isset($cnpj) ? htmlspecialchars($cnpj) : '') ?>">
+                <small>Formato: XX.XXX.XXX/XXXX-XX</small>
             </div>
 
             <div class="form-group">
                 <label for="email">Email:</label>
                 <input type="email" name="email" id="email"
-                       value="<?= isset($email) ? htmlspecialchars($email) : ($editing ? htmlspecialchars($fabricante['email'] ?? '') : '') ?>">
+                       value="<?= $editing ? htmlspecialchars($fabricante['email'] ?? '') : (isset($email) ? htmlspecialchars($email) : '') ?>">
+            </div>
+
+            <div class="form-group">
+                <label for="endereco">Endereço:</label>
+                <input type="text" name="endereco" id="endereco"
+                       value="<?= $editing ? htmlspecialchars($fabricante['endereco'] ?? '') : (isset($endereco) ? htmlspecialchars($endereco) : '') ?>">
             </div>
 
             <div class="form-group">
                 <label for="observacao">Observação:</label>
-                <textarea name="observacao" id="observacao"><?= isset($observacao) ? htmlspecialchars($observacao) : ($editing ? htmlspecialchars($fabricante['observacao'] ?? '') : '') ?></textarea>
+                <textarea name="observacao" id="observacao"><?= $editing ? htmlspecialchars($fabricante['observacao'] ?? '') : (isset($observacao) ? htmlspecialchars($observacao) : '') ?></textarea>
             </div>
 
             <input type="submit" value="<?= $editing ? 'Atualizar' : 'Cadastrar' ?>">
         </form>
 
         <p>
-            <a href="list_fabricantes.php">Ver todos os Fabricantes</a> |
+            <a href="list_fabricantes.php">Ver Lista de Fabricantes</a> |
             <a href="../index.php">Voltar para a Página Inicial</a>
         </p>
     </div>

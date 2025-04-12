@@ -2,8 +2,12 @@
 // cadastros/produto.php
 require_once __DIR__ . '/../config/db.php';
 
-// Fetch fabricantes for populating the select dropdown
-$stmtFabricantes = $pdo->query("SELECT id, nome FROM fabricantes ORDER BY nome");
+// Busca os grupos para popular o select
+$stmtGrupos = $pdo->query("SELECT id, nome FROM grupos ORDER BY nome");
+$grupos = $stmtGrupos->fetchAll(PDO::FETCH_ASSOC);
+
+// Busca os fabricantes para popular o select
+$stmtFabricantes = $pdo->query("SELECT id, nome, cnpj FROM fabricantes ORDER BY nome");
 $fabricantes = $stmtFabricantes->fetchAll(PDO::FETCH_ASSOC);
 
 // Check if editing existing record
@@ -26,7 +30,8 @@ $unidades_medida = ['Kg', 'g', 'mg', 'L', 'ml', 'cm³', 'cm', 'm', 'm²', 'm³',
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nome = $_POST['nome'];
-    $id_fabricante = isset($_POST['id_fabricante']) ? trim($_POST['id_fabricante']) : '';
+    $id_grupo = isset($_POST['id_grupo']) ? trim($_POST['id_grupo']) : '';
+    $id_fabricante = isset($_POST['id_fabricante']) ? trim($_POST['id_fabricante']) : null;
     $tipo = $_POST['tipo'] ?? '';
     $volume = $_POST['volume'] ?? '';
     $unidade_medida = $_POST['unidade_medida'] ?? '';
@@ -37,19 +42,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (empty($nome)) {
         $errors[] = "O nome do produto é obrigatório.";
     }
-    if (empty($id_fabricante)) {
-        $errors[] = "O fabricante do produto é obrigatório.";
+    if (empty($id_grupo)) {
+        $errors[] = "O grupo do produto é obrigatório.";
     }
 
     // If no validation errors, proceed with database operation
     if (empty($errors)) {
         if ($editing) {
             // Update existing product
-            $sql = "UPDATE produtos SET nome = :nome, id_fabricante = :id_fabricante,
+            $sql = "UPDATE produtos SET nome = :nome, id_grupo = :id_grupo, id_fabricante = :id_fabricante,
                     tipo = :tipo, volume = :volume, unidade_medida = :unidade_medida, preco = :preco
                     WHERE id = :id";
             $params = [
                 'nome' => $nome,
+                'id_grupo' => $id_grupo,
                 'id_fabricante' => $id_fabricante,
                 'tipo' => $tipo,
                 'volume' => $volume,
@@ -68,10 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         } else {
             // Insert new product
-            $sql = "INSERT INTO produtos (nome, id_fabricante, tipo, volume, unidade_medida, preco)
-                    VALUES (:nome, :id_fabricante, :tipo, :volume, :unidade_medida, :preco)";
+            $sql = "INSERT INTO produtos (nome, id_grupo, id_fabricante, tipo, volume, unidade_medida, preco)
+                    VALUES (:nome, :id_grupo, :id_fabricante, :tipo, :volume, :unidade_medida, :preco)";
             $params = [
                 'nome' => $nome,
+                'id_grupo' => $id_grupo,
                 'id_fabricante' => $id_fabricante,
                 'tipo' => $tipo,
                 'volume' => $volume,
@@ -186,11 +193,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('product-form');
             form.addEventListener('submit', function(event) {
-                const fabricanteField = document.getElementById('id_fabricante');
-                if (!fabricanteField.value) {
+                const grupoField = document.getElementById('id_grupo');
+                if (!grupoField.value) {
                     event.preventDefault();
-                    alert('O campo Fabricante é obrigatório');
-                    fabricanteField.focus();
+                    alert('O campo Grupo é obrigatório');
+                    grupoField.focus();
                 }
             });
         });
@@ -214,12 +221,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
 
             <div class="form-group">
-                <label for="id_fabricante">Fabricante: <span class="required-indicator">*</span></label>
-                <select name="id_fabricante" id="id_fabricante" required>
+                <label for="id_fabricante">Fabricante:</label>
+                <select name="id_fabricante" id="id_fabricante">
                     <option value="">Selecione</option>
                     <?php foreach ($fabricantes as $fabricante): ?>
-                    <option value="<?= $fabricante['id'] ?>" <?= ($editing && ($produto['id_fabricante'] ?? null) == $fabricante['id']) || (isset($id_fabricante) && $id_fabricante == $fabricante['id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($fabricante['nome']) ?>
+                    <option value="<?= $fabricante['id'] ?>" <?= ($editing && $produto['id_fabricante'] == $fabricante['id']) || (isset($id_fabricante) && $id_fabricante == $fabricante['id']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($fabricante['nome']) ?> (<?= htmlspecialchars($fabricante['cnpj']) ?>)
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+                <small><a href="fabricante.php" target="_blank">Cadastrar novo fabricante</a></small>
+            </div>
+
+            <div class="form-group">
+                <label for="id_grupo">Grupo: <span class="required-indicator">*</span></label>
+                <select name="id_grupo" id="id_grupo" required>
+                    <option value="">Selecione</option>
+                    <?php foreach ($grupos as $grupo): ?>
+                    <option value="<?= $grupo['id'] ?>" <?= ($editing && $produto['id_grupo'] == $grupo['id']) || (isset($id_grupo) && $id_grupo == $grupo['id']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($grupo['nome']) ?>
                     </option>
                     <?php endforeach; ?>
                 </select>
@@ -266,10 +286,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <input type="submit" value="<?= $editing ? 'Atualizar' : 'Cadastrar' ?>">
         </form>
 
-        <p>
-            <a href="list_produtos.php">Ver todos os Produtos</a> |
-            <a href="../index.php">Voltar para a Página Inicial</a>
-        </p>
+        <p><a href="../index.php">Voltar para a Página Inicial</a></p>
     </div>
 </body>
 </html>

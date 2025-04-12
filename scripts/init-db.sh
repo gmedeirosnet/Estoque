@@ -59,10 +59,17 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     END
     \$\$;
 
-    -- Criação da tabela de Fabricantes (substituindo a de Grupos)
+    -- Criação da tabela de Grupos de Produtos
+    CREATE TABLE IF NOT EXISTS grupos (
+      id SERIAL PRIMARY KEY,
+      nome VARCHAR(100) NOT NULL,
+      descricao TEXT
+    );
+
+    -- Criação da tabela de Fabricantes
     CREATE TABLE IF NOT EXISTS fabricantes (
       id SERIAL PRIMARY KEY,
-      cnpj VARCHAR(18) UNIQUE NOT NULL,
+      cnpj VARCHAR(18) NOT NULL UNIQUE,
       nome VARCHAR(100) NOT NULL,
       observacao TEXT,
       endereco VARCHAR(255),
@@ -70,38 +77,11 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Migrando dados da tabela grupos para fabricantes, se existirem
-    DO \$\$
-    BEGIN
-        IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'grupos')
-           AND NOT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'fabricantes') THEN
-
-            -- Criar tabela fabricantes se não existir
-            CREATE TABLE IF NOT EXISTS fabricantes (
-              id SERIAL PRIMARY KEY,
-              cnpj VARCHAR(18) UNIQUE NOT NULL,
-              nome VARCHAR(100) NOT NULL,
-              observacao TEXT,
-              endereco VARCHAR(255),
-              email VARCHAR(100),
-              data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-
-            -- Inserir dados dos grupos como fabricantes com CNPJ genérico
-            INSERT INTO fabricantes (cnpj, nome, observacao)
-            SELECT '00000000000000' || id, nome, descricao FROM grupos;
-
-            -- Atualizar referências em produtos
-            ALTER TABLE produtos ADD COLUMN id_fabricante INTEGER;
-            UPDATE produtos SET id_fabricante = id_grupo;
-        END IF;
-    END
-    \$\$;
-
-    -- Criação da tabela de Produtos
+    -- Criação da tabela de Produtos (atualizada para usar fabricantes)
     CREATE TABLE IF NOT EXISTS produtos (
       id SERIAL PRIMARY KEY,
       nome VARCHAR(100) NOT NULL,
+      id_grupo INTEGER REFERENCES grupos(id) ON DELETE SET NULL,
       id_fabricante INTEGER REFERENCES fabricantes(id) ON DELETE SET NULL,
       tipo VARCHAR(50),
       volume VARCHAR(50),
@@ -110,21 +90,18 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Adiciona ou atualiza colunas se a tabela já existir
+    -- Adiciona as novas colunas se a tabela já existir
     DO \$\$
     BEGIN
         IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'produtos') THEN
-            -- Renomear coluna id_grupo para id_fabricante se existir
-            IF EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'id_grupo')
-               AND NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'id_fabricante') THEN
-                ALTER TABLE produtos RENAME COLUMN id_grupo TO id_fabricante;
-                -- Atualizar a foreign key
-                ALTER TABLE produtos DROP CONSTRAINT IF EXISTS produtos_id_grupo_fkey;
-                ALTER TABLE produtos ADD CONSTRAINT produtos_id_fabricante_fkey
-                    FOREIGN KEY (id_fabricante) REFERENCES fabricantes(id) ON DELETE SET NULL;
+            IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'id_fabricante') THEN
+                ALTER TABLE produtos ADD COLUMN id_fabricante INTEGER REFERENCES fabricantes(id) ON DELETE SET NULL;
             END IF;
 
-            -- Adicionar outras colunas se não existirem
+            IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'fabricante') THEN
+                ALTER TABLE produtos ADD COLUMN fabricante VARCHAR(100);
+            END IF;
+
             IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'tipo') THEN
                 ALTER TABLE produtos ADD COLUMN tipo VARCHAR(50);
             END IF;

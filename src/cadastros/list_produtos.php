@@ -18,7 +18,7 @@ $where_clause = '';
 $params = [];
 
 if (!empty($search)) {
-    $where_clause = "WHERE p.nome LIKE :search OR p.fabricante LIKE :search OR p.tipo LIKE :search";
+    $where_clause = "WHERE p.nome LIKE :search OR f.nome LIKE :search OR p.tipo LIKE :search";
     $params[':search'] = "%{$search}%";
 }
 
@@ -33,10 +33,22 @@ if ($filter_grupo > 0) {
     $params[':grupo'] = $filter_grupo;
 }
 
+// Filter by fabricante
+$filter_fabricante = isset($_GET['fabricante']) ? (int)$_GET['fabricante'] : 0;
+if ($filter_fabricante > 0) {
+    if (empty($where_clause)) {
+        $where_clause = "WHERE p.id_fabricante = :fabricante";
+    } else {
+        $where_clause .= " AND p.id_fabricante = :fabricante";
+    }
+    $params[':fabricante'] = $filter_fabricante;
+}
+
 // Get produtos with pagination and search
-$sql = "SELECT p.*, g.nome AS grupo_nome
+$sql = "SELECT p.*, g.nome AS grupo_nome, f.nome AS fabricante_nome, f.cnpj AS fabricante_cnpj
         FROM produtos p
         LEFT JOIN grupos g ON p.id_grupo = g.id
+        LEFT JOIN fabricantes f ON p.id_fabricante = f.id
         {$where_clause}
         ORDER BY p.nome ASC
         LIMIT :limit OFFSET :offset";
@@ -52,6 +64,10 @@ $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Get product groups for filter
 $stmt_grupos = $pdo->query("SELECT id, nome FROM grupos ORDER BY nome");
 $grupos = $stmt_grupos->fetchAll(PDO::FETCH_ASSOC);
+
+// Get fabricantes for filter
+$stmt_fabricantes = $pdo->query("SELECT id, nome FROM fabricantes ORDER BY nome");
+$fabricantes = $stmt_fabricantes->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle delete action
 if (isset($_POST['delete']) && isset($_POST['id'])) {
@@ -223,6 +239,17 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
     </style>
 </head>
 <body>
@@ -245,21 +272,41 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
                 <?php if ($filter_grupo > 0): ?>
                     <input type="hidden" name="grupo" value="<?= $filter_grupo ?>">
                 <?php endif; ?>
+                <?php if ($filter_fabricante > 0): ?>
+                    <input type="hidden" name="fabricante" value="<?= $filter_fabricante ?>">
+                <?php endif; ?>
                 <button type="submit">Buscar</button>
             </form>
         </div>
 
-        <div class="filter-controls">
-            <label for="filter_grupo">Filtrar por Grupo:</label>
-            <select id="filter_grupo" onchange="window.location.href=this.value">
-                <option value="?<?= !empty($search) ? 'search=' . urlencode($search) : '' ?>">Todos os Grupos</option>
-                <?php foreach ($grupos as $grupo): ?>
-                <option value="?grupo=<?= $grupo['id'] ?><?= !empty($search) ? '&search=' . urlencode($search) : '' ?>"
-                        <?= $filter_grupo == $grupo['id'] ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($grupo['nome']) ?>
-                </option>
-                <?php endforeach; ?>
-            </select>
+        <div class="filter-row">
+            <div class="filter-item">
+                <label for="filter_grupo">Filtrar por Grupo:</label>
+                <select id="filter_grupo" onchange="applyFilters()">
+                    <option value="0">Todos os Grupos</option>
+                    <?php foreach ($grupos as $grupo): ?>
+                    <option value="<?= $grupo['id'] ?>" <?= $filter_grupo == $grupo['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($grupo['nome']) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label for="filter_fabricante">Filtrar por Fabricante:</label>
+                <select id="filter_fabricante" onchange="applyFilters()">
+                    <option value="0">Todos os Fabricantes</option>
+                    <?php foreach ($fabricantes as $fab): ?>
+                    <option value="<?= $fab['id'] ?>" <?= $filter_fabricante == $fab['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($fab['nome']) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <?php if ($filter_grupo > 0 || $filter_fabricante > 0 || !empty($search)): ?>
+                <a href="list_produtos.php" class="btn">Limpar Filtros</a>
+            <?php endif; ?>
         </div>
 
         <?php if (count($produtos) > 0): ?>
@@ -281,7 +328,16 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
                         <tr>
                             <td><?= $produto['id'] ?></td>
                             <td><?= htmlspecialchars($produto['nome']) ?></td>
-                            <td><?= htmlspecialchars($produto['fabricante'] ?? '-') ?></td>
+                            <td>
+                                <?php if (!empty($produto['fabricante_nome'])): ?>
+                                    <?= htmlspecialchars($produto['fabricante_nome']) ?>
+                                    <br><small><?= htmlspecialchars($produto['fabricante_cnpj'] ?? '') ?></small>
+                                <?php elseif (!empty($produto['fabricante'])): ?>
+                                    <?= htmlspecialchars($produto['fabricante']) ?> <small>(legado)</small>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
                             <td><?= htmlspecialchars($produto['grupo_nome'] ?? '-') ?></td>
                             <td><?= htmlspecialchars($produto['tipo'] ?? '-') ?></td>
                             <td>
@@ -314,8 +370,8 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
             <?php if ($total_pages > 1): ?>
                 <div class="pagination">
                     <?php if ($page > 1): ?>
-                        <a href="?page=1<?= $filter_grupo ? '&grupo=' . $filter_grupo : '' ?><?= !empty($search) ? '&search=' . urlencode($search) : '' ?>">Primeira</a>
-                        <a href="?page=<?= ($page - 1) ?><?= $filter_grupo ? '&grupo=' . $filter_grupo : '' ?><?= !empty($search) ? '&search=' . urlencode($search) : '' ?>">Anterior</a>
+                        <a href="?page=1<?= $filter_grupo ? '&grupo=' . $filter_grupo : '' ?><?= $filter_fabricante ? '&fabricante=' . $filter_fabricante : '' ?><?= !empty($search) ? '&search=' . urlencode($search) : '' ?>">Primeira</a>
+                        <a href="?page=<?= ($page - 1) ?><?= $filter_grupo ? '&grupo=' . $filter_grupo : '' ?><?= $filter_fabricante ? '&fabricante=' . $filter_fabricante : '' ?><?= !empty($search) ? '&search=' . urlencode($search) : '' ?>">Anterior</a>
                     <?php else: ?>
                         <span class="disabled">Primeira</span>
                         <span class="disabled">Anterior</span>
@@ -328,13 +384,13 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
                         <?php if ($i == $page): ?>
                             <span class="active"><?= $i ?></span>
                         <?php else: ?>
-                            <a href="?page=<?= $i ?><?= $filter_grupo ? '&grupo=' . $filter_grupo : '' ?><?= !empty($search) ? '&search=' . urlencode($search) : '' ?>"><?= $i ?></a>
+                            <a href="?page=<?= $i ?><?= $filter_grupo ? '&grupo=' . $filter_grupo : '' ?><?= $filter_fabricante ? '&fabricante=' . $filter_fabricante : '' ?><?= !empty($search) ? '&search=' . urlencode($search) : '' ?>"><?= $i ?></a>
                         <?php endif; ?>
                     <?php endfor; ?>
 
                     <?php if ($page < $total_pages): ?>
-                        <a href="?page=<?= ($page + 1) ?><?= $filter_grupo ? '&grupo=' . $filter_grupo : '' ?><?= !empty($search) ? '&search=' . urlencode($search) : '' ?>">Próxima</a>
-                        <a href="?page=<?= $total_pages ?><?= $filter_grupo ? '&grupo=' . $filter_grupo : '' ?><?= !empty($search) ? '&search=' . urlencode($search) : '' ?>">Última</a>
+                        <a href="?page=<?= ($page + 1) ?><?= $filter_grupo ? '&grupo=' . $filter_grupo : '' ?><?= $filter_fabricante ? '&fabricante=' . $filter_fabricante : '' ?><?= !empty($search) ? '&search=' . urlencode($search) : '' ?>">Próxima</a>
+                        <a href="?page=<?= $total_pages ?><?= $filter_grupo ? '&grupo=' . $filter_grupo : '' ?><?= $filter_fabricante ? '&fabricante=' . $filter_fabricante : '' ?><?= !empty($search) ? '&search=' . urlencode($search) : '' ?>">Última</a>
                     <?php else: ?>
                         <span class="disabled">Próxima</span>
                         <span class="disabled">Última</span>
@@ -347,5 +403,31 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
 
         <p><a href="../index.php" class="btn">Voltar para a Página Inicial</a></p>
     </div>
+
+    <script>
+        function applyFilters() {
+            const grupoValue = document.getElementById('filter_grupo').value;
+            const fabricanteValue = document.getElementById('filter_fabricante').value;
+            const searchValue = '<?= urlencode($search) ?>';
+
+            let url = 'list_produtos.php?';
+            let params = [];
+
+            if (grupoValue !== '0') {
+                params.push('grupo=' + grupoValue);
+            }
+
+            if (fabricanteValue !== '0') {
+                params.push('fabricante=' + fabricanteValue);
+            }
+
+            if (searchValue) {
+                params.push('search=' + searchValue);
+            }
+
+            url += params.join('&');
+            window.location.href = url;
+        }
+    </script>
 </body>
 </html>
