@@ -13,6 +13,7 @@ $pessoas = fetchLimit($pdo, 'pessoas');
 $grupos = fetchLimit($pdo, 'grupos');
 $produtos = fetchLimit($pdo, 'produtos');
 $lugares = fetchLimit($pdo, 'lugares');
+$grupos_pessoas = fetchLimit($pdo, 'grupos_pessoas');
 
 // For movimentos we need to join with related tables
 $stmt = $pdo->query("
@@ -142,7 +143,10 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="cadastros/pessoa.php">Cadastro de Pessoas</a>
                 </div>
                 <div class="menu-item">
-                    <a href="cadastros/grupo.php">Cadastro de Grupos</a>
+                    <a href="cadastros/grupo_pessoa.php">Cadastro de Grupos de Pessoas</a>
+                </div>
+                <div class="menu-item">
+                    <a href="cadastros/grupo.php">Cadastro de Grupos de Produtos</a>
                 </div>
                 <div class="menu-item">
                     <a href="cadastros/produto.php">Cadastro de Produtos</a>
@@ -204,11 +208,37 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="cadastros/list_pessoas.php" class="see-all">Ver todos</a>
                 </div>
 
-                <!-- Grupos -->
+                <!-- Grupos de Pessoas -->
+                <div class="record-card">
+                    <h3>Grupos de Pessoas</h3>
+                    <?php if (!empty($grupos_pessoas)): ?>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Descrição</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($grupos_pessoas as $grupo): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($grupo['nome']) ?></td>
+                                    <td><?= htmlspecialchars(substr($grupo['descricao'] ?? '', 0, 30)) . (strlen($grupo['descricao'] ?? '') > 30 ? '...' : '') ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php else: ?>
+                        <p>Nenhum grupo de pessoas cadastrado</p>
+                    <?php endif; ?>
+                    <a href="cadastros/list_grupos_pessoas.php" class="see-all">Ver todos</a>
+                </div>
+
+                <!-- Grupos de Produtos -->
                 <div class="record-card">
                     <h3>Grupos de Produtos</h3>
                     <?php if (!empty($grupos)): ?>
-                        <table>
+                        <<table>
                             <thead>
                                 <tr>
                                     <th>Nome</th>
@@ -225,7 +255,7 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </tbody>
                         </table>
                     <?php else: ?>
-                        <p>Nenhum grupo cadastrado</p>
+                        <p>Nenhum grupo de produtos cadastrado</p>
                     <?php endif; ?>
                     <a href="#" class="see-all" onclick="alert('Funcionalidade a ser implementada')">Ver todos</a>
                 </div>
