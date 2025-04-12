@@ -260,44 +260,10 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 <div class="menu-item">
                     <a href="relatorios/relatorio_estoque.php">Relatório de Estoque</a>
                 </div>
-            </div>
-
-            <?php if (!empty($produtos_por_lugar)): ?>
-            <div class="produtos-por-lugar" style="margin-top: 20px;">
-                <h3>Produtos Disponíveis por Local</h3>
-
-                <div class="accordion">
-                    <?php foreach ($produtos_por_lugar as $lugar): ?>
-                    <div class="accordion-item">
-                        <div class="accordion-header">
-                            <h4><?= htmlspecialchars($lugar['nome']) ?></h4>
-                            <span class="badge"><?= count($lugar['produtos']) ?></span>
-                        </div>
-                        <div class="accordion-content">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Produto</th>
-                                        <th>Grupo</th>
-                                        <th>Quantidade</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($lugar['produtos'] as $item): ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($item['produto']) ?></td>
-                                        <td><?= htmlspecialchars($item['grupo'] ?? 'Sem grupo') ?></td>
-                                        <td class="text-right"><?= $item['saldo'] ?></td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
+                <div class="menu-item">
+                    <a href="relatorios/produtos_por_local.php">Produtos Disponíveis por Local</a>
                 </div>
             </div>
-            <?php endif; ?>
         </div>
 
         <div class="records-section">
