@@ -54,18 +54,6 @@
             <p>Gerencie produtos, pessoas, movimentações e gere relatórios</p>
         </header>
 
-        <div class="setup-section">
-            <h2>Configuração do Sistema</h2>
-            <div class="menu-grid">
-                <div class="menu-item">
-                    <a href="test_connection.php">Testar Conexão</a>
-                </div>
-                <div class="menu-item">
-                    <a href="setup_database.php">Configurar Banco de Dados</a>
-                </div>
-            </div>
-        </div>
-
         <div class="menu-section">
             <h2>Cadastros</h2>
             <div class="menu-grid">

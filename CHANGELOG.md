@@ -8,13 +8,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [0.3.0] - 2023-05-01
 
 ### Adicionado
-- Atualização para PHP 8.2 estável
+- Atualização para PHP 8.4 estável
 - Adicionado arquivo de configuração php.ini customizado
 - Adicionado .dockerignore para otimizar builds
-- Documentação atualizada com requisitos PHP 8.2
+- Documentação atualizada com requisitos PHP 8.4
 
 ### Alterado
-- Docker Compose configurado para usar a imagem oficial php:8.2-apache
+- Docker Compose configurado para usar a imagem oficial php:8.4-apache
 - Corrigidos os comandos de inicialização do container PHP
 - Configuração de portas e ambiente para melhor compatibilidade
 

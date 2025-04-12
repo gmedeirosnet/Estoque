@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   php:
-    image: php:8.2-apache
+    image: php:8.4-apache
     container_name: estoque_php
     volumes:
       - ./src:/var/www/html

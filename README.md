@@ -2,7 +2,7 @@
 
 ## DESCRIÇÃO
 
-A seguir, apresento um exemplo de como desenvolver um sistema de estoque simples usando PHP 8.2 e PostgreSQL. Essa solução exemplifica os seguintes módulos:
+A seguir, apresento um exemplo de como desenvolver um sistema de estoque simples usando PHP 8.4 e PostgreSQL. Essa solução exemplifica os seguintes módulos:
 
     - Cadastro de Pessoas
 
@@ -18,7 +18,7 @@ A ideia é estruturar o sistema em camadas, separando a configuração e a conex
 
 ## Requisitos
 
-- PHP 8.2 ou superior
+- PHP 8.4 ou superior
 - PostgreSQL 15
 - Docker e Docker Compose (para ambiente de desenvolvimento)
 
