@@ -87,6 +87,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       volume VARCHAR(50),
       unidade_medida VARCHAR(20),
       preco NUMERIC(10,2),
+      descricao TEXT,
       data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -112,6 +113,10 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 
             IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'unidade_medida') THEN
                 ALTER TABLE produtos ADD COLUMN unidade_medida VARCHAR(20);
+            END IF;
+
+            IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'descricao') THEN
+                ALTER TABLE produtos ADD COLUMN descricao TEXT;
             END IF;
         END IF;
     END
