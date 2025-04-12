@@ -10,7 +10,7 @@ Sistema de estoque simples desenvolvido com PHP 8.4 e PostgreSQL 15, implementan
 - Movimentações (entradas e saídas) de Produtos
 - Geração de Relatórios de Movimentações e Estoque Atual
 
-O sistema é estruturado em camadas, separando configuração, conexão com banco de dados, operações CRUD para cada módulo e geração de relatórios. Este projeto demonstra boas práticas de modelagem relacional e implementação PHP.
+O sistema é estruturado em camadas, separando configuração, conexão com banco de dados, operações CRUD para cada módulo e geração de relatórios. Este projeto demonstra boas práticas de modelagem relacional e implementação PHP com foco em segurança e confiabilidade.
 
 ## Requisitos
 
@@ -30,11 +30,16 @@ Estoque/
 │   │   ├── pessoa.php
 │   │   ├── grupo.php
 │   │   ├── produto.php
+│   │   ├── fabricante.php
+│   │   ├── grupo_pessoa.php
 │   │   ├── lugar.php
-│   │   └── movimento.php
+│   │   ├── movimento.php
+│   │   └── list_*.php        # Listagens de cadastros
 │   ├── config/               # Configurações da aplicação
 │   │   ├── db.php            # Conexão com o banco de dados
-│   │   └── sql.sh            # Scripts SQL auxiliares
+│   │   ├── sql.sh            # Scripts SQL auxiliares
+│   │   ├── cadastros/        # Configurações específicas para cadastros
+│   │   └── relatorios/       # Configurações para relatórios
 │   └── relatorios/           # Geração de relatórios
 │       ├── relatorio_estoque.php
 │       └── relatorio_movimentos.php
@@ -45,6 +50,7 @@ Estoque/
 │   ├── outputs.tf
 │   └── variables.tf
 ├── docker-compose.yml        # Configuração dos containers Docker
+├── run.sh                    # Script de execução rápida
 ├── README.md                 # Este arquivo
 ├── CHANGELOG.md              # Histórico de alterações
 ├── ADR.md                    # Registro de decisões arquiteturais
@@ -67,7 +73,11 @@ Estoque/
    cd estoque
    ```
 
-3. Inicie os contêineres:
+3. Execute o script de inicialização:
+   ```bash
+   ./run.sh
+   ```
+   Ou inicie os contêineres manualmente:
    ```bash
    docker-compose up -d
    ```
@@ -110,12 +120,15 @@ Se encontrar problemas de conexão com o PostgreSQL:
 
 4. Certifique-se de que as credenciais de banco de dados estão corretas em `src/config/db.php`
 
+5. Aguarde a inicialização completa do PostgreSQL, que pode levar alguns segundos
+
 ## Considerações Técnicas
 
 ### Validações e Segurança:
 - Prepared statements para prevenção de SQL Injection
 - Validação de dados nos formulários
 - Estrutura que permite implementação futura de autenticação de usuários
+- Configuração segura de contêineres Docker
 
 ### Modularização:
 - Organização em diretórios funcionais
@@ -137,3 +150,7 @@ Se encontrar problemas de conexão com o PostgreSQL:
 ## Licença
 
 Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
+
+## Última Atualização
+
+12 de abril de 2025

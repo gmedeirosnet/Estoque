@@ -5,7 +5,26 @@ Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/spec/v2.0.0.html).
 
-## [0.4.0] - 2025-04-12
+## [0.5.0] - 2025-04-12
+
+### Adicionado
+- Arquivos de listagem para os cadastros (`list_fabricantes.php`, `list_grupos_pessoas.php`, `list_pessoas.php`, `list_produtos.php`)
+- Integração com Terraform para facilitar o provisionamento em produção
+- Adição do arquivo `run.sh` para inicialização simplificada do ambiente
+- Mensagens mais detalhadas nos logs de erro
+
+### Alterado
+- Documentação atualizada com estrutura mais clara e representativa da organização atual
+- Melhorias no script de Docker Compose com volumes e networks mais bem definidos
+- Fluxo de operações otimizado para cadastro de produtos e pessoas
+- Interface de relatórios aprimorada para melhor visualização dos dados
+
+### Segurança
+- Implementação adicional contra Cross-Site Scripting (XSS) nos formulários
+- Atualização de dependências para eliminar vulnerabilidades conhecidas
+- Revisão de permissões no acesso a arquivos no container Docker
+
+## [0.4.0] - 2025-03-15
 
 ### Adicionado
 - Arquivo `test_connection.php` para diagnóstico de problemas de conexão com o PostgreSQL

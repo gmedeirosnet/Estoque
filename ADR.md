@@ -146,3 +146,81 @@ As melhorias na conectividade com PostgreSQL e na configuração de containeriza
 Estas mudanças estão alinhadas com a arquitetura modular inicialmente adotada e preparam o terreno para futuras melhorias, como a possível adoção de frameworks de PHP mais robustos, sem comprometer a simplicidade atual do sistema.
 
 > **Revisão:** Este ADR deve ser revisado caso novas estratégias de containerização ou padrões de conectividade com banco de dados sejam adotados.
+
+---
+
+# ADR-003: Implementação de Infraestrutura como Código com Terraform
+
+**Data:** 2025-04-12
+**Status:** Aceito
+
+## Contexto
+
+Com a evolução do sistema de estoque e o aumento da complexidade do ambiente de produção, surgiu a necessidade de uma estratégia mais robusta para provisionamento e gerenciamento de infraestrutura. O processo manual de configuração de ambientes estava se tornando propenso a erros e difícil de manter à medida que novos ambientes eram necessários para desenvolvimento, testes e produção.
+
+Os desafios específicos incluíam:
+
+1. **Inconsistências entre ambientes:** Diferenças sutis na configuração entre desenvolvimento e produção causavam problemas difíceis de diagnosticar
+2. **Processos manuais demorados:** A configuração manual de novos ambientes consumia tempo excessivo da equipe
+3. **Documentação desatualizada:** A documentação de infraestrutura frequentemente ficava desatualizada em relação à implementação real
+4. **Dificuldade em escalabilidade:** A necessidade de escalar a aplicação para múltiplas regiões ou provedores de nuvem se tornava um desafio sem automação
+
+## Decisão
+
+Implementar uma solução de Infraestrutura como Código (IaC) utilizando Terraform para automatizar o provisionamento e gerenciamento da infraestrutura do sistema, com os seguintes componentes:
+
+### 1. Adoção do Terraform como ferramenta de IaC
+
+- Criar módulos Terraform que definam toda a infraestrutura necessária (servidores web, banco de dados PostgreSQL, balanceadores de carga, redes e regras de segurança)
+- Parametrizar configurações através de variáveis para suportar diferentes ambientes
+- Implementar outputs para facilitar a obtenção de informações importantes após o provisionamento
+
+### 2. Estrutura do Código Terraform
+
+- **Módulos reutilizáveis** para componentes comuns como servidores web, banco de dados e rede
+- **Configurações específicas por ambiente** (desenvolvimento, testes, produção)
+- **Organização em estado remoto** para colaboração da equipe
+
+### 3. Integração com o Fluxo de Trabalho
+
+- Implementar validações automáticas do código Terraform em pipelines CI/CD
+- Criar scripts de automação para aplicar as configurações de forma consistente
+- Integrar com o script `run.sh` para facilitar o uso em ambiente local
+
+### 4. Segurança e Gerenciamento de Segredos
+
+- Implementar armazenamento seguro de credenciais e segredos
+- Utilizar variáveis de ambiente e backends seguros para armazenamento de estado
+
+## Alternativas Consideradas
+
+### CloudFormation (AWS) ou ARM Templates (Azure)
+Ferramentas específicas de provedores poderiam ser mais integradas com seus respectivos ambientes de nuvem, mas restringiriam a portabilidade entre diferentes provedores, uma consideração importante para a estratégia de longo prazo.
+
+### Ansible ou Chef
+Estas ferramentas são excelentes para configuração e gerenciamento de configuração, mas menos adequadas para o provisionamento de infraestrutura completa. Poderiam ser usadas em conjunto com o Terraform para uma solução mais abrangente.
+
+### Docker Swarm ou Kubernetes
+Soluções de orquestração de contêineres como Kubernetes poderiam oferecer recursos avançados de escalabilidade e gerenciamento, mas introduziriam uma complexidade significativa que não se justifica no estágio atual do projeto.
+
+## Consequências
+
+### Positivas
+- **Infraestrutura como código versionado:** Alterações na infraestrutura podem ser revisadas, versionadas e auditadas
+- **Consistência entre ambientes:** Redução de problemas de "funciona na minha máquina"
+- **Documentação viva:** O código Terraform serve como documentação atualizada da infraestrutura
+- **Facilidade de replicação:** Novos ambientes podem ser provisionados rapidamente e de forma idêntica
+- **Flexibilidade para migração entre provedores:** Menor dependência de um provedor específico de nuvem
+
+### Negativas
+- **Curva de aprendizado inicial:** A equipe precisará investir tempo para aprender Terraform
+- **Complexidade adicional:** Introdução de mais uma ferramenta no stack de tecnologia
+- **Necessidade de gerenciamento de estado:** O estado do Terraform precisa ser gerenciado adequadamente
+
+## Conclusão
+
+A implementação de Infraestrutura como Código com Terraform representa um passo importante na maturação do sistema de estoque, permitindo um gerenciamento mais consistente, documentado e automatizado da infraestrutura. Embora exista uma curva inicial de aprendizado, os benefícios de longo prazo em termos de confiabilidade, reprodutibilidade e eficiência superam os custos.
+
+Esta decisão se alinha com as práticas modernas de DevOps e fornece uma base sólida para futuros crescimentos e melhorias na infraestrutura do sistema, enquanto mantém as opções abertas para diferentes estratégias de hospedagem.
+
+> **Revisão:** Este ADR deve ser revisado após 6 meses de implementação ou quando houver mudanças significativas na estratégia de infraestrutura.
