@@ -263,6 +263,9 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 <div class="menu-item">
                     <a href="relatorios/produtos_por_local.php">Produtos Disponíveis por Local</a>
                 </div>
+                <div class="menu-item">
+                    <a href="relatorios/movimentacao_produtos.php">Movimentação de Produtos</a>
+                </div>
             </div>
         </div>
 
