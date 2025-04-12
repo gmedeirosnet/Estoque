@@ -18,12 +18,17 @@ $where_clause = '';
 $params = [];
 
 if (!empty($search)) {
-    $where_clause = "WHERE nome LIKE :search OR email LIKE :search";
+    $where_clause = "WHERE p.nome LIKE :search OR p.email LIKE :search";
     $params[':search'] = "%{$search}%";
 }
 
 // Get persons with pagination and search
-$sql = "SELECT * FROM pessoas {$where_clause} ORDER BY nome ASC LIMIT :limit OFFSET :offset";
+$sql = "SELECT p.id, p.nome, p.email, p.data_cadastro, gp.nome AS grupo_nome
+        FROM pessoas p
+        LEFT JOIN grupos_pessoas gp ON p.id_grupo_pessoa = gp.id
+        {$where_clause}
+        ORDER BY p.nome ASC
+        LIMIT :limit OFFSET :offset";
 $stmt = $pdo->prepare($sql);
 foreach ($params as $key => $value) {
     $stmt->bindValue($key, $value);
@@ -210,6 +215,7 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
                         <th>ID</th>
                         <th>Nome</th>
                         <th>Email</th>
+                        <th>Grupo</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -219,6 +225,7 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
                             <td><?= $pessoa['id'] ?></td>
                             <td><?= htmlspecialchars($pessoa['nome']) ?></td>
                             <td><?= htmlspecialchars($pessoa['email'] ?? '-') ?></td>
+                            <td><?= htmlspecialchars($pessoa['grupo_nome'] ?? 'Não atribuído') ?></td>
                             <td class="actions">
                                 <a href="pessoa.php?id=<?= $pessoa['id'] ?>" class="btn btn-warning">Editar</a>
                                 <form method="post" onsubmit="return confirm('Tem certeza que deseja excluir esta pessoa?');" style="display: inline;">

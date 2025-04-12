@@ -13,10 +13,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     END
     \$\$;
 
-    -- Create database if it doesn't exist
-    -- (Note: This will be skipped if DB already exists because we're connected to it)
-    -- CREATE DATABASE estoque;
-
     -- Grant privileges
     GRANT ALL PRIVILEGES ON DATABASE estoque TO estoque;
     GRANT ALL PRIVILEGES ON DATABASE estoque TO admin;
@@ -28,13 +24,40 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     GRANT ALL ON SCHEMA public TO estoque;
     GRANT ALL ON SCHEMA public TO admin;
 
+    -- Criação da tabela de Grupos de Pessoas
+    CREATE TABLE IF NOT EXISTS grupos_pessoas (
+      id SERIAL PRIMARY KEY,
+      nome VARCHAR(100) NOT NULL,
+      descricao TEXT
+    );
+
+    -- Inserir o grupo padrão "Usuários" se a tabela estiver vazia
+    INSERT INTO grupos_pessoas (nome, descricao)
+    SELECT 'Usuários', 'Grupo padrão de usuários'
+    WHERE NOT EXISTS (SELECT 1 FROM grupos_pessoas);
+
     -- Criação da tabela de Pessoas
     CREATE TABLE IF NOT EXISTS pessoas (
       id SERIAL PRIMARY KEY,
       nome VARCHAR(100) NOT NULL,
       email VARCHAR(100),
+      id_grupo_pessoa INTEGER REFERENCES grupos_pessoas(id) ON DELETE SET NULL,
       data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Atualizar pessoas existentes para usar o grupo padrão, se necessário
+    DO \$\$
+    BEGIN
+        IF EXISTS (
+            SELECT 1 FROM pessoas
+            WHERE id_grupo_pessoa IS NULL
+        ) THEN
+            UPDATE pessoas
+            SET id_grupo_pessoa = (SELECT id FROM grupos_pessoas WHERE nome = 'Usuários')
+            WHERE id_grupo_pessoa IS NULL;
+        END IF;
+    END
+    \$\$;
 
     -- Criação da tabela de Grupos de Produtos
     CREATE TABLE IF NOT EXISTS grupos (
