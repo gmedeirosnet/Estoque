@@ -28,6 +28,35 @@ $stmt = $pdo->query("
     LIMIT 5
 ");
 $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get inventory by location
+$stmt = $pdo->query("
+    SELECT
+        l.id as lugar_id,
+        l.nome as lugar,
+        p.id as produto_id,
+        p.nome as produto,
+        g.nome as grupo,
+        COALESCE(SUM(CASE WHEN m.tipo = 'entrada' THEN m.quantidade ELSE -m.quantidade END), 0) as saldo
+    FROM lugares l
+    LEFT JOIN movimentos m ON l.id = m.id_lugar
+    LEFT JOIN produtos p ON m.id_produto = p.id
+    LEFT JOIN grupos g ON p.id_grupo = g.id
+    GROUP BY l.id, l.nome, p.id, p.nome, g.nome
+    HAVING COALESCE(SUM(CASE WHEN m.tipo = 'entrada' THEN m.quantidade ELSE -m.quantidade END), 0) > 0
+    ORDER BY l.nome, p.nome
+");
+$produtos_por_lugar = [];
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    $lugar_id = $row['lugar_id'];
+    if (!isset($produtos_por_lugar[$lugar_id])) {
+        $produtos_por_lugar[$lugar_id] = [
+            'nome' => $row['lugar'],
+            'produtos' => []
+        ];
+    }
+    $produtos_por_lugar[$lugar_id]['produtos'][] = $row;
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -128,6 +157,58 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .see-all:hover {
             text-decoration: underline;
         }
+
+        /* Accordion Styles */
+        .produtos-por-lugar {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background-color: #fff;
+        }
+        .produtos-por-lugar h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            color: #333;
+        }
+        .accordion-item {
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .accordion-header {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .accordion-header h4 {
+            margin: 0;
+            font-size: 16px;
+        }
+        .accordion-content {
+            display: none;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+        }
+        .accordion-item.active .accordion-content {
+            display: block;
+        }
+        .badge {
+            background-color: #007bff;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        .text-right {
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -180,6 +261,43 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="relatorios/relatorio_estoque.php">Relatório de Estoque</a>
                 </div>
             </div>
+
+            <?php if (!empty($produtos_por_lugar)): ?>
+            <div class="produtos-por-lugar" style="margin-top: 20px;">
+                <h3>Produtos Disponíveis por Local</h3>
+
+                <div class="accordion">
+                    <?php foreach ($produtos_por_lugar as $lugar): ?>
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <h4><?= htmlspecialchars($lugar['nome']) ?></h4>
+                            <span class="badge"><?= count($lugar['produtos']) ?></span>
+                        </div>
+                        <div class="accordion-content">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th>Grupo</th>
+                                        <th>Quantidade</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($lugar['produtos'] as $item): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($item['produto']) ?></td>
+                                        <td><?= htmlspecialchars($item['grupo'] ?? 'Sem grupo') ?></td>
+                                        <td class="text-right"><?= $item['saldo'] ?></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
 
         <div class="records-section">
@@ -384,5 +502,38 @@ $movimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <p>Sistema de Controle de Estoque &copy; <?= date('Y') ?></p>
         </footer>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle accordion functionality
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    // Get the parent accordion item
+                    const accordionItem = this.parentNode;
+
+                    // Toggle active class
+                    const wasActive = accordionItem.classList.contains('active');
+
+                    // Close all accordion items
+                    document.querySelectorAll('.accordion-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+
+                    // If it wasn't active before, make it active now
+                    if (!wasActive) {
+                        accordionItem.classList.add('active');
+                    }
+                });
+            });
+
+            // Open the first accordion item by default
+            const firstAccordionItem = document.querySelector('.accordion-item');
+            if (firstAccordionItem) {
+                firstAccordionItem.classList.add('active');
+            }
+        });
+    </script>
 </body>
 </html>
