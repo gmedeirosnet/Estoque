@@ -59,49 +59,41 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     END
     \$\$;
 
-    -- Criação da tabela de Fabricantes (antiga tabela de Grupos de Produtos)
+    -- Criação da tabela de Fabricantes (substituindo a de Grupos)
     CREATE TABLE IF NOT EXISTS fabricantes (
       id SERIAL PRIMARY KEY,
-      cnpj VARCHAR(18) UNIQUE,
+      cnpj VARCHAR(18) UNIQUE NOT NULL,
       nome VARCHAR(100) NOT NULL,
       observacao TEXT,
-      endereco VARCHAR(200),
+      endereco VARCHAR(255),
       email VARCHAR(100),
       data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Migração de dados da tabela 'grupos' para 'fabricantes' se necessário
+    -- Migrando dados da tabela grupos para fabricantes, se existirem
     DO \$\$
     BEGIN
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'grupos') THEN
+        IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'grupos')
+           AND NOT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'fabricantes') THEN
+
             -- Criar tabela fabricantes se não existir
-            IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'fabricantes') THEN
-                CREATE TABLE fabricantes (
-                  id SERIAL PRIMARY KEY,
-                  cnpj VARCHAR(18) UNIQUE,
-                  nome VARCHAR(100) NOT NULL,
-                  observacao TEXT,
-                  endereco VARCHAR(200),
-                  email VARCHAR(100),
-                  data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-            END IF;
+            CREATE TABLE IF NOT EXISTS fabricantes (
+              id SERIAL PRIMARY KEY,
+              cnpj VARCHAR(18) UNIQUE NOT NULL,
+              nome VARCHAR(100) NOT NULL,
+              observacao TEXT,
+              endereco VARCHAR(255),
+              email VARCHAR(100),
+              data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
 
-            -- Copiar dados de grupos para fabricantes
-            INSERT INTO fabricantes (id, nome, observacao)
-            SELECT id, nome, descricao
-            FROM grupos
-            ON CONFLICT DO NOTHING;
+            -- Inserir dados dos grupos como fabricantes com CNPJ genérico
+            INSERT INTO fabricantes (cnpj, nome, observacao)
+            SELECT '00000000000000' || id, nome, descricao FROM grupos;
 
-            -- Atualizar produtos para usar id_fabricante ao invés de id_grupo
-            ALTER TABLE IF EXISTS produtos
-            ADD COLUMN IF NOT EXISTS id_fabricante INTEGER REFERENCES fabricantes(id) ON DELETE SET NULL;
-
-            -- Copiar referências de id_grupo para id_fabricante
-            UPDATE produtos SET id_fabricante = id_grupo WHERE id_grupo IS NOT NULL AND id_fabricante IS NULL;
-
-            -- Se necessário, remover a tabela grupos após a migração
-            -- DROP TABLE grupos CASCADE;
+            -- Atualizar referências em produtos
+            ALTER TABLE produtos ADD COLUMN id_fabricante INTEGER;
+            UPDATE produtos SET id_fabricante = id_grupo;
         END IF;
     END
     \$\$;
@@ -118,21 +110,21 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Adiciona as novas colunas se a tabela já existir e faz migração necessária
+    -- Adiciona ou atualiza colunas se a tabela já existir
     DO \$\$
     BEGIN
         IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'produtos') THEN
-            -- Adicionar coluna id_fabricante se não existir
-            IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'id_fabricante') THEN
-                ALTER TABLE produtos ADD COLUMN id_fabricante INTEGER REFERENCES fabricantes(id) ON DELETE SET NULL;
+            -- Renomear coluna id_grupo para id_fabricante se existir
+            IF EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'id_grupo')
+               AND NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'id_fabricante') THEN
+                ALTER TABLE produtos RENAME COLUMN id_grupo TO id_fabricante;
+                -- Atualizar a foreign key
+                ALTER TABLE produtos DROP CONSTRAINT IF EXISTS produtos_id_grupo_fkey;
+                ALTER TABLE produtos ADD CONSTRAINT produtos_id_fabricante_fkey
+                    FOREIGN KEY (id_fabricante) REFERENCES fabricantes(id) ON DELETE SET NULL;
             END IF;
 
-            -- Migrar dados de id_grupo para id_fabricante se necessário
-            IF EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'id_grupo') THEN
-                UPDATE produtos SET id_fabricante = id_grupo WHERE id_grupo IS NOT NULL AND id_fabricante IS NULL;
-            END IF;
-
-            -- Adicionar demais colunas se não existirem
+            -- Adicionar outras colunas se não existirem
             IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'tipo') THEN
                 ALTER TABLE produtos ADD COLUMN tipo VARCHAR(50);
             END IF;
