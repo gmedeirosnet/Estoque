@@ -59,19 +59,58 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     END
     \$\$;
 
-    -- Criação da tabela de Grupos de Produtos
-    CREATE TABLE IF NOT EXISTS grupos (
+    -- Criação da tabela de Fabricantes (antiga tabela de Grupos de Produtos)
+    CREATE TABLE IF NOT EXISTS fabricantes (
       id SERIAL PRIMARY KEY,
+      cnpj VARCHAR(18) UNIQUE,
       nome VARCHAR(100) NOT NULL,
-      descricao TEXT
+      observacao TEXT,
+      endereco VARCHAR(200),
+      email VARCHAR(100),
+      data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Migração de dados da tabela 'grupos' para 'fabricantes' se necessário
+    DO \$\$
+    BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'grupos') THEN
+            -- Criar tabela fabricantes se não existir
+            IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'fabricantes') THEN
+                CREATE TABLE fabricantes (
+                  id SERIAL PRIMARY KEY,
+                  cnpj VARCHAR(18) UNIQUE,
+                  nome VARCHAR(100) NOT NULL,
+                  observacao TEXT,
+                  endereco VARCHAR(200),
+                  email VARCHAR(100),
+                  data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            END IF;
+
+            -- Copiar dados de grupos para fabricantes
+            INSERT INTO fabricantes (id, nome, observacao)
+            SELECT id, nome, descricao
+            FROM grupos
+            ON CONFLICT DO NOTHING;
+
+            -- Atualizar produtos para usar id_fabricante ao invés de id_grupo
+            ALTER TABLE IF EXISTS produtos
+            ADD COLUMN IF NOT EXISTS id_fabricante INTEGER REFERENCES fabricantes(id) ON DELETE SET NULL;
+
+            -- Copiar referências de id_grupo para id_fabricante
+            UPDATE produtos SET id_fabricante = id_grupo WHERE id_grupo IS NOT NULL AND id_fabricante IS NULL;
+
+            -- Se necessário, remover a tabela grupos após a migração
+            -- DROP TABLE grupos CASCADE;
+        END IF;
+    END
+    \$\$;
 
     -- Criação da tabela de Produtos
     CREATE TABLE IF NOT EXISTS produtos (
       id SERIAL PRIMARY KEY,
       nome VARCHAR(100) NOT NULL,
-      id_grupo INTEGER REFERENCES grupos(id) ON DELETE SET NULL,
-      fabricante VARCHAR(100),
+      id_fabricante INTEGER REFERENCES fabricantes(id) ON DELETE SET NULL,
       tipo VARCHAR(50),
       volume VARCHAR(50),
       unidade_medida VARCHAR(20),
@@ -79,14 +118,21 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Adiciona as novas colunas se a tabela já existir
+    -- Adiciona as novas colunas se a tabela já existir e faz migração necessária
     DO \$\$
     BEGIN
         IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'produtos') THEN
-            IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'fabricante') THEN
-                ALTER TABLE produtos ADD COLUMN fabricante VARCHAR(100);
+            -- Adicionar coluna id_fabricante se não existir
+            IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'id_fabricante') THEN
+                ALTER TABLE produtos ADD COLUMN id_fabricante INTEGER REFERENCES fabricantes(id) ON DELETE SET NULL;
             END IF;
 
+            -- Migrar dados de id_grupo para id_fabricante se necessário
+            IF EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'id_grupo') THEN
+                UPDATE produtos SET id_fabricante = id_grupo WHERE id_grupo IS NOT NULL AND id_fabricante IS NULL;
+            END IF;
+
+            -- Adicionar demais colunas se não existirem
             IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'produtos' AND column_name = 'tipo') THEN
                 ALTER TABLE produtos ADD COLUMN tipo VARCHAR(50);
             END IF;
