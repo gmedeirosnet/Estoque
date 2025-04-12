@@ -137,8 +137,20 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       id_lugar INTEGER REFERENCES lugares(id) ON DELETE CASCADE,
       tipo VARCHAR(10) NOT NULL, -- 'entrada' ou 'saida'
       quantidade INTEGER NOT NULL,
-      data_movimento TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      data_movimento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      observacao TEXT
     );
+
+    -- Adiciona a nova coluna 'observacao' se a tabela já existir
+    DO \$\$
+    BEGIN
+        IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'movimentos') THEN
+            IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'movimentos' AND column_name = 'observacao') THEN
+                ALTER TABLE movimentos ADD COLUMN observacao TEXT;
+            END IF;
+        END IF;
+    END
+    \$\$;
 EOSQL
 
 # Grant permissions after table creation
