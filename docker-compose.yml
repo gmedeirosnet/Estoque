@@ -6,19 +6,27 @@ services:
     container_name: estoque_php
     volumes:
       - ./src:/var/www/html
+      - ./src/php.ini:/usr/local/etc/php/conf.d/custom.ini
     ports:
       - "8080:80"
     depends_on:
       - db
     environment:
+      - DB_HOST=db
+      - DB_NAME=estoque
+      - DB_USER=admin
+      - DB_PASSWORD=password
+      - DB_PORT=5432
       - PHP_INI_SCAN_DIR=/usr/local/etc/php/conf.d
     command: >
       bash -c "apt-get update && apt-get install -y libpq-dev libzip-dev zip unzip &&
       docker-php-ext-install pdo pdo_pgsql zip &&
       a2enmod rewrite &&
+      chmod +x /var/www/html/config/sql.sh &&
       apache2-foreground"
     networks:
       - estoque_network
+    restart: unless-stopped
 
   db:
     image: postgres:15
@@ -26,16 +34,20 @@ services:
     restart: always
     environment:
       POSTGRES_DB: estoque
-      POSTGRES_USER: admin        # Alterado: novo usuário root
-      POSTGRES_PASSWORD: password # Alterado: nova senha root
-      POSTGRES_MULTIPLE_DATABASES: estoque  # Define banco adicional
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh  # Script para criar usuário adicional
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     networks:
       - estoque_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d estoque"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   pgadmin:
     image: dpage/pgadmin4
@@ -49,6 +61,7 @@ services:
       - db
     networks:
       - estoque_network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
