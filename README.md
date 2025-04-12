@@ -4,8 +4,8 @@
 
 Sistema de estoque simples desenvolvido com PHP 8.4 e PostgreSQL 15, implementando os seguintes módulos:
 
-- Cadastro de Pessoas
-- Cadastro de Produtos e Grupos de Produtos
+- Cadastro de Pessoas e Grupos de Pessoas
+- Cadastro de Produtos, Grupos de Produtos e Fabricantes
 - Cadastro de Lugares de Estocagem
 - Movimentações (entradas e saídas) de Produtos
 - Geração de Relatórios de Movimentações e Estoque Atual
@@ -17,6 +17,7 @@ O sistema é estruturado em camadas, separando configuração, conexão com banc
 - PHP 8.4 ou superior
 - PostgreSQL 15
 - Docker e Docker Compose (para ambiente de desenvolvimento)
+- Terraform 1.5+ (para provisionamento da infraestrutura)
 
 ## Estrutura de Arquivos e Organização do projeto
 
@@ -27,13 +28,13 @@ Estoque/
 │   ├── test_connection.php   # Ferramenta para testar a conexão com o DB
 │   ├── php.ini               # Configuração personalizada do PHP
 │   ├── cadastros/            # Formulários e operações CRUD
-│   │   ├── pessoa.php
-│   │   ├── grupo.php
-│   │   ├── produto.php
-│   │   ├── fabricante.php
-│   │   ├── grupo_pessoa.php
-│   │   ├── lugar.php
-│   │   ├── movimento.php
+│   │   ├── pessoa.php        # Cadastro de pessoas
+│   │   ├── grupo.php         # Cadastro de grupos de produtos
+│   │   ├── grupo_pessoa.php  # Cadastro de grupos de pessoas
+│   │   ├── produto.php       # Cadastro de produtos
+│   │   ├── fabricante.php    # Cadastro de fabricantes
+│   │   ├── lugar.php         # Cadastro de lugares de estoque
+│   │   ├── movimento.php     # Registro de movimentações
 │   │   └── list_*.php        # Listagens de cadastros
 │   ├── config/               # Configurações da aplicação
 │   │   ├── db.php            # Conexão com o banco de dados
@@ -41,14 +42,17 @@ Estoque/
 │   │   ├── cadastros/        # Configurações específicas para cadastros
 │   │   └── relatorios/       # Configurações para relatórios
 │   └── relatorios/           # Geração de relatórios
-│       ├── relatorio_estoque.php
-│       └── relatorio_movimentos.php
+│       ├── relatorio_estoque.php          # Relatório geral de estoque
+│       ├── relatorio_movimentos.php       # Relatório de movimentações
+│       ├── produtos_por_local.php         # Relatório de produtos por local
+│       └── movimentacao_produtos.php      # Relatório de movimentação por produto
 ├── scripts/                  # Scripts de inicialização
-│   └── init-db.sh            # Script para inicialização do banco de dados
+│   ├── init-db.sh            # Script para inicialização do banco de dados
+│   └── populate_database.sql # Script para popular o banco com dados iniciais
 ├── terraform/                # Arquivos para infraestrutura como código
-│   ├── main.tf
-│   ├── outputs.tf
-│   └── variables.tf
+│   ├── main.tf               # Configuração principal do Terraform
+│   ├── outputs.tf            # Saídas do Terraform
+│   └── variables.tf          # Variáveis configuráveis do Terraform
 ├── docker-compose.yml        # Configuração dos containers Docker
 ├── run.sh                    # Script de execução rápida
 ├── README.md                 # Este arquivo
@@ -99,6 +103,29 @@ Estoque/
 4. Configure os parâmetros de conexão em `src/config/db.php`
 5. Acesse a aplicação pelo seu servidor web
 
+### Provisionamento com Terraform
+
+Para provisionamento em ambientes de produção:
+
+1. Configure as credenciais do seu provedor de nuvem
+2. Navegue até o diretório `terraform/`:
+   ```bash
+   cd terraform
+   ```
+3. Inicialize o Terraform:
+   ```bash
+   terraform init
+   ```
+4. Personalize as variáveis em `variables.tf` ou crie um arquivo `terraform.tfvars`
+5. Valide o plano de execução:
+   ```bash
+   terraform plan
+   ```
+6. Aplique a configuração:
+   ```bash
+   terraform apply
+   ```
+
 ## Solução de Problemas de Conexão
 
 Se encontrar problemas de conexão com o PostgreSQL:
@@ -126,9 +153,9 @@ Se encontrar problemas de conexão com o PostgreSQL:
 
 ### Validações e Segurança:
 - Prepared statements para prevenção de SQL Injection
-- Validação de dados nos formulários
+- Validação e sanitização de dados nos formulários
 - Estrutura que permite implementação futura de autenticação de usuários
-- Configuração segura de contêineres Docker
+- Configuração segura de contêineres Docker e infraestrutura
 
 ### Modularização:
 - Organização em diretórios funcionais
@@ -136,8 +163,14 @@ Se encontrar problemas de conexão com o PostgreSQL:
 - Fácil manutenção e extensão do código
 
 ### Interface e Usabilidade:
-- Interface HTML simples e funcional
+- Interface HTML simples e funcional com CSS responsivo
 - Possibilidade de integração com frameworks CSS no futuro
+- Formulários validados tanto no cliente quanto no servidor
+
+### Infraestrutura:
+- Configuração containerizada para desenvolvimento
+- Infraestrutura como código usando Terraform para ambientes de produção
+- Facilidade para escalar em diferentes provedores de nuvem
 
 ## Contribuição
 
@@ -146,6 +179,8 @@ Se encontrar problemas de conexão com o PostgreSQL:
 3. Faça commit das suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`)
 4. Envie para o branch (`git push origin feature/nova-funcionalidade`)
 5. Abra um Pull Request
+
+Antes de enviar seu código, certifique-se de seguir as diretrizes de segurança descritas em `SECURITY.md`.
 
 ## Licença
 

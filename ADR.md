@@ -1,7 +1,20 @@
+# Arquitetura - Registro de Decisões (ARD/ADR)
+
+Este documento registra as decisões arquiteturais significativas tomadas durante o desenvolvimento do Sistema de Estoque.
+
+## Índice
+
+- [ADR-001: Escolha do Stack Tecnológico para o Sistema de Estoque](#adr-001-escolha-do-stack-tecnológico-para-o-sistema-de-estoque)
+- [ADR-002: Melhoria da Conectividade com PostgreSQL e Containerização](#adr-002-melhoria-da-conectividade-com-postgresql-e-containerização)
+- [ADR-003: Implementação de Infraestrutura como Código com Terraform](#adr-003-implementação-de-infraestrutura-como-código-com-terraform)
+
+---
+
 # ADR-001: Escolha do Stack Tecnológico para o Sistema de Estoque
 
 **Data:** 2025-04-08
 **Status:** Aceito
+**Responsáveis:** Equipe de Desenvolvimento
 
 ## Contexto
 
@@ -30,7 +43,7 @@ A decisão tomada é a seguinte:
 ### Estruturação do Projeto:
 
 - **Modularidade:** Organização do código em pastas separadas (configuração, cadastros e relatórios), o que facilita a manutenção e futuras expansões.
-- **Arquitetura Camada:** Separação das responsabilidades, com isolamento da lógica de acesso a dados, validação de entrada e apresentação.
+- **Arquitetura em Camadas:** Separação das responsabilidades, com isolamento da lógica de acesso a dados, validação de entrada e apresentação.
 - **Segurança:** Implementação de práticas como o uso de prepared statements para prevenir ataques de SQL Injection, além de validações adequadas dos dados do lado do cliente e servidor.
 
 ### Abordagem Inicial vs. Futuras Expansões:
@@ -75,6 +88,7 @@ A escolha do stack tecnológico – PHP para o desenvolvimento e PostgreSQL para
 
 **Data:** 2025-04-12
 **Status:** Aceito
+**Responsáveis:** Equipe de Infraestrutura e Desenvolvimento
 
 ## Contexto
 
@@ -153,6 +167,7 @@ Estas mudanças estão alinhadas com a arquitetura modular inicialmente adotada 
 
 **Data:** 2025-04-12
 **Status:** Aceito
+**Responsáveis:** Equipe de DevOps e Infraestrutura
 
 ## Contexto
 
