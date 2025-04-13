@@ -287,9 +287,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
 
                 <div class="form-col">
-                    <label for="id_lugar">Lugar de Estoque: <span class="required">*</span></label>
+                    <label for="id_lugar">Localização de Estoque: <span class="required">*</span></label>
                     <select name="id_lugar" id="id_lugar" required>
-                        <option value="">Selecione um local</option>
+                        <option value="">Selecione uma localização</option>
                         <?php foreach ($lugares as $lugar): ?>
                         <option value="<?= $lugar['id'] ?>" <?= isset($id_lugar) && $id_lugar == $lugar['id'] ? 'selected' : '' ?>>
                             <?= htmlspecialchars($lugar['nome']) ?>

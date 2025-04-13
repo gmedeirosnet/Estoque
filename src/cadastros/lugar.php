@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Validate required fields
     $errors = [];
     if (empty($nome)) {
-        $errors[] = "O nome do lugar é obrigatório.";
+        $errors[] = "O nome da localização é obrigatório.";
     }
 
     if (empty($errors)) {
@@ -36,10 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     'descricao' => $descricao,
                     'id' => $_GET['id']
                 ])) {
-                    $message = "Lugar atualizado com sucesso!";
+                    $message = "Localização atualizada com sucesso!";
                     $messageType = "success";
                 } else {
-                    $message = "Erro ao atualizar lugar.";
+                    $message = "Erro ao atualizar localização.";
                     $messageType = "error";
                 }
             } else {
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $check = $pdo->prepare("SELECT id FROM lugares WHERE nome = :nome");
                 $check->execute(['nome' => $nome]);
                 if ($check->fetchColumn()) {
-                    $message = "Já existe um lugar com este nome.";
+                    $message = "Já existe uma localização com este nome.";
                     $messageType = "error";
                 } else {
                     // Insert new record
@@ -57,13 +57,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         'nome' => $nome,
                         'descricao' => $descricao
                     ])) {
-                        $message = "Lugar cadastrado com sucesso!";
+                        $message = "Localização cadastrada com sucesso!";
                         $messageType = "success";
 
                         // Clear form fields after successful insert
                         $nome = $descricao = '';
                     } else {
-                        $message = "Erro ao cadastrar lugar.";
+                        $message = "Erro ao cadastrar localização.";
                         $messageType = "error";
                     }
                 }
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $editing ? 'Editar' : 'Cadastro de' ?> Lugar de Estoque</title>
+    <title><?= $editing ? 'Editar' : 'Cadastro de' ?> Localização de Estoque</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -174,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
     <div class="container">
-        <h1><?= $editing ? 'Editar' : 'Cadastro de' ?> Lugar de Estoque</h1>
+        <h1><?= $editing ? 'Editar' : 'Cadastro de' ?> Localização de Estoque</h1>
 
         <?php if (isset($message)): ?>
             <div class="message <?= $messageType ?>">
@@ -184,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <form method="post">
             <div class="form-group">
-                <label for="nome">Nome do Lugar: <span style="color: red;">*</span></label>
+                <label for="nome">Nome da Localização: <span style="color: red;">*</span></label>
                 <input type="text" name="nome" id="nome" required
                        value="<?= $editing ? htmlspecialchars($lugar['nome']) : (isset($nome) ? htmlspecialchars($nome) : '') ?>">
             </div>
@@ -201,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <?php if ($editing): ?>
                 <a href="list_lugares.php">Cancelar</a>
             <?php else: ?>
-                <a href="list_lugares.php">Ver Lista de Lugares</a> |
+                <a href="list_lugares.php">Ver Lista de Localizações</a> |
                 <a href="../index.php">Voltar para a Página Inicial</a>
             <?php endif; ?>
         </div>

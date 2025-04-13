@@ -63,7 +63,7 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Controle de Estoque</title>
+    <title>SIPROQUIM</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -214,8 +214,8 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 <body>
     <div class="container">
         <header>
-            <h1>Sistema de Controle de Estoque</h1>
-            <p>Gerencie produtos, pessoas, movimentações e gere relatórios</p>
+            <h1>SIPROQUIM</h1>
+            <p>Gestão de produtos Químicos</p>
         </header>
 
         <div class="menu-section">
@@ -234,10 +234,7 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                     <a href="cadastros/produto.php">Cadastro de Produtos</a>
                 </div>
                 <div class="menu-item">
-                    <a href="cadastros/fabricante.php">Cadastro de Fabricantes</a>
-                </div>
-                <div class="menu-item">
-                    <a href="cadastros/lugar.php">Cadastro de Lugares</a>
+                    <a href="cadastros/lugar.php">Cadastro de Localização</a>
                 </div>
             </div>
         </div>
@@ -381,7 +378,7 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
                 <!-- Lugares -->
                 <div class="record-card">
-                    <h3>Lugares</h3>
+                    <h3>Localização</h3>
                     <?php if (!empty($lugares)): ?>
                         <table>
                             <thead>
@@ -468,7 +465,7 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         </div>
 
         <footer>
-            <p>Sistema de Controle de Estoque &copy; <?= date('Y') ?></p>
+            <p>SIPROQUIM &copy; <?= date('Y') ?></p>
         </footer>
     </div>
 

@@ -44,7 +44,7 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
         $movimentos_count = $stmt_check->fetchColumn();
 
         if ($movimentos_count > 0) {
-            $error = "Não é possível excluir este lugar pois existem movimentações associadas a ele.";
+            $error = "Não é possível excluir esta localização pois existem movimentações associadas a ela.";
         } else {
             $stmt = $pdo->prepare("DELETE FROM lugares WHERE id = :id");
             $stmt->execute([':id' => $id]);
@@ -54,7 +54,7 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
             exit;
         }
     } catch (PDOException $e) {
-        $error = "Não foi possível excluir este lugar. Erro: " . $e->getMessage();
+        $error = "Não foi possível excluir esta localização. Erro: " . $e->getMessage();
     }
 }
 ?>
@@ -64,7 +64,7 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Lugares de Estoque</title>
+    <title>Lista de Localizações de Estoque</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -193,10 +193,10 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
 </head>
 <body>
     <div class="container">
-        <h1>Lista de Lugares de Estoque</h1>
+        <h1>Lista de Localizações de Estoque</h1>
 
         <?php if (isset($_GET['deleted'])): ?>
-            <div class="message success">Lugar excluído com sucesso!</div>
+            <div class="message success">Localização excluída com sucesso!</div>
         <?php endif; ?>
 
         <?php if (isset($error)): ?>
@@ -204,7 +204,7 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
         <?php endif; ?>
 
         <div class="header-actions">
-            <a href="lugar.php" class="btn btn-primary">Cadastrar Novo Lugar</a>
+            <a href="lugar.php" class="btn btn-primary">Cadastrar Nova Localização</a>
 
             <form class="search-form" method="get">
                 <input type="text" name="search" placeholder="Buscar por nome ou descrição" value="<?= htmlspecialchars($search) ?>">
@@ -230,7 +230,7 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
                             <td><?= htmlspecialchars($lugar['descricao'] ?? '-') ?></td>
                             <td class="actions">
                                 <a href="lugar.php?id=<?= $lugar['id'] ?>" class="btn btn-warning">Editar</a>
-                                <form method="post" onsubmit="return confirm('Tem certeza que deseja excluir este lugar?');" style="display: inline;">
+                                <form method="post" onsubmit="return confirm('Tem certeza que deseja excluir esta localização?');" style="display: inline;">
                                     <input type="hidden" name="id" value="<?= $lugar['id'] ?>">
                                     <button type="submit" name="delete" class="btn btn-danger">Excluir</button>
                                 </form>
@@ -271,7 +271,7 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
                 </div>
             <?php endif; ?>
         <?php else: ?>
-            <p>Nenhum lugar de estoque encontrado.</p>
+            <p>Nenhuma localização de estoque encontrada.</p>
         <?php endif; ?>
 
         <p><a href="../index.php" class="btn">Voltar para a Página Inicial</a></p>
